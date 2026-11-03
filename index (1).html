@@ -1,0 +1,1723 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Game Arcade — 10 Games, Coins &amp; Rewards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#10121c; --bg2:#171a29; --surface:#1d2133; --surface2:#262b42;
+    --ink:#f2f3fa; --ink-dim:#a7abc2; --line:#333a55;
+    --accent:#ffd23f; --accent-ink:#1a1600;
+    --snake:#4ade80; --flappy:#fbbf24; --memory:#f472b6; --whack:#fb923c; --g2048:#38bdf8; --brick:#a78bfa;
+    --fruit:#f87171; --runner:#2dd4bf; --chess:#e7c873; --fishing:#60a5fa;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#eceef4; --bg2:#e2e5ef; --surface:#ffffff; --surface2:#f2f3f9;
+      --ink:#171a29; --ink-dim:#565d75; --line:#c9cede;
+      --accent:#e8a800; --accent-ink:#241a00;
+    }
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:20px 16px 48px;}
+  h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;margin:0;}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;}
+
+  /* ---------- Lobby ---------- */
+  .hero{padding:14px 0 6px;}
+  .hero h1{font-size:clamp(34px,7vw,56px);font-weight:800;letter-spacing:-0.5px;line-height:1.02;}
+  .hero h1 .hl{color:var(--accent);}
+  .hero p{color:var(--ink-dim);font-size:16px;margin:10px 0 0;max-width:56ch;line-height:1.5;}
+  .statbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 4px;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px;color:var(--ink-dim);}
+  .stat b{color:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:15px;}
+  .stat.coins{border-color:var(--accent);}
+  .stat.coins b{color:var(--accent);}
+  .vercel-note{margin-top:14px;background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px;color:var(--ink-dim);line-height:1.55;}
+  .vercel-note b{color:var(--ink);}
+
+  .secttl{font-size:24px;font-weight:800;margin:28px 0 4px;}
+  .secsub{color:var(--ink-dim);font-size:14px;margin:0 0 6px;line-height:1.5;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-top:16px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;text-align:left;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;gap:10px;transition:transform .12s ease,border-color .12s ease;font:inherit;width:100%;}
+  .card:hover{transform:translateY(-3px);}
+  .card:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  .card .art{height:92px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--surface2);overflow:hidden;}
+  .card h3{font-size:21px;font-weight:700;}
+  .card p{margin:0;color:var(--ink-dim);font-size:14px;line-height:1.5;flex:1;}
+  .card .meta{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink-dim);gap:8px;flex-wrap:wrap;}
+  .card .best{font-family:"IBM Plex Mono",monospace;}
+  .card .reward{color:var(--accent);font-weight:600;}
+  .playbtn{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:13.5px;padding:7px 14px;border-radius:999px;}
+  .card[data-game="snake"]{border-top:4px solid var(--snake);}
+  .card[data-game="flappy"]{border-top:4px solid var(--flappy);}
+  .card[data-game="memory"]{border-top:4px solid var(--memory);}
+  .card[data-game="whack"]{border-top:4px solid var(--whack);}
+  .card[data-game="g2048"]{border-top:4px solid var(--g2048);}
+  .card[data-game="brick"]{border-top:4px solid var(--brick);}
+  .card[data-game="fruit"]{border-top:4px solid var(--fruit);}
+  .card[data-game="runner"]{border-top:4px solid var(--runner);}
+  .card[data-game="chess"]{border-top:4px solid var(--chess);}
+  .card[data-game="fishing"]{border-top:4px solid var(--fishing);}
+  .newtag{font-size:11px;font-weight:700;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 8px;vertical-align:middle;margin-left:6px;letter-spacing:.4px;}
+
+  /* ---------- Shop ---------- */
+  .shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;margin-top:14px;}
+  .shopitem{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:7px;}
+  .shopitem .cat{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-dim);}
+  .shopitem .ic{font-size:30px;line-height:1;}
+  .shopitem h4{margin:0;font-size:16px;font-family:"Bricolage Grotesque",sans-serif;}
+  .shopitem p{margin:0;color:var(--ink-dim);font-size:13px;line-height:1.45;flex:1;}
+  .shopitem .row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .price{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--accent);font-size:14px;}
+  .buybtn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;padding:8px 16px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;}
+  .buybtn:disabled{background:var(--surface2);color:var(--ink-dim);cursor:not-allowed;}
+  .buybtn.sel{background:var(--surface2);color:var(--ink);border:1px solid var(--line);}
+  .buybtn.active{background:var(--snake);color:#06280f;}
+  .shopitem.equipped{border-color:var(--snake);}
+
+  footer{margin-top:30px;color:var(--ink-dim);font-size:13px;line-height:1.6;}
+
+  /* ---------- Game screen ---------- */
+  #gameScreen{display:none;}
+  .topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .backbtn{background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:9px 16px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;}
+  .backbtn:hover{border-color:var(--accent);}
+  .topbar h2{font-size:26px;font-weight:800;}
+  .coinchip{margin-left:auto;background:var(--surface);border:1px solid var(--accent);border-radius:999px;padding:7px 14px;font-size:14px;color:var(--ink-dim);}
+  .coinchip b{color:var(--accent);font-family:"IBM Plex Mono",monospace;font-size:15px;}
+  .scorebar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .scorechip{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px;color:var(--ink-dim);}
+  .scorechip b{color:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:16px;margin-left:4px;}
+  .stage{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .howto{color:var(--ink-dim);font-size:14px;line-height:1.55;text-align:center;max-width:56ch;margin:0;}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;padding:11px 22px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;}
+  .btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line);}
+  .btn:active{transform:scale(.97);}
+  canvas{display:block;max-width:100%;height:auto;border-radius:10px;touch-action:none;}
+  .banner{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:20px;text-align:center;min-height:28px;}
+  .banner.win{color:var(--snake);}
+  .banner.lose{color:#f87171;}
+
+  /* Toast */
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:16px;padding:12px 22px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.35);font-family:"Bricolage Grotesque",sans-serif;white-space:nowrap;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* D-pad */
+  .dpad{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,56px);gap:6px;}
+  .dpad button{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:12px;font-size:20px;cursor:pointer;}
+  .dpad button:active{background:var(--accent);color:var(--accent-ink);}
+  .dpad .sp{visibility:hidden;}
+
+  /* Memory */
+  .memgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:min(420px,100%);}
+  .memcard{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:var(--surface2);font-size:clamp(26px,7vw,38px);cursor:pointer;display:flex;align-items:center;justify-content:center;color:transparent;transition:transform .15s ease,background .15s ease;user-select:none;}
+  .memcard.flip{background:var(--bg2);color:var(--ink);transform:rotateY(0);}
+  .memcard.done{background:var(--snake);color:var(--ink);border-color:var(--snake);cursor:default;opacity:.9;}
+  .memcard .back{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;color:var(--ink-dim);font-size:22px;}
+  .memcard.flip .back,.memcard.done .back{display:none;}
+
+  /* Whack */
+  .holes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:min(380px,100%);}
+  .hole{aspect-ratio:1;border-radius:50%;background:var(--bg2);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:clamp(30px,9vw,46px);cursor:pointer;user-select:none;position:relative;overflow:hidden;}
+  .hole .mole{transform:translateY(110%);transition:transform .12s ease;line-height:1;}
+  .hole.up .mole{transform:translateY(0);}
+  .hole.gold{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%, transparent);}
+
+  /* 2048 */
+  .board2048{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:min(400px,92vw);background:var(--bg2);padding:8px;border-radius:12px;touch-action:none;}
+  .cell2048{aspect-ratio:1;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:clamp(18px,5.5vw,26px);color:var(--ink);}
+  .cell2048[data-v="2"]{background:#3b4266;} .cell2048[data-v="4"]{background:#47538a;}
+  .cell2048[data-v="8"]{background:#b45309;} .cell2048[data-v="16"]{background:#c2410c;}
+  .cell2048[data-v="32"]{background:#be3455;} .cell2048[data-v="64"]{background:#9d2c46;}
+  .cell2048[data-v="128"]{background:#a16207;color:#fff8d6;} .cell2048[data-v="256"]{background:#ca8a04;color:#fff8d6;}
+  .cell2048[data-v="512"]{background:#15803d;} .cell2048[data-v="1024"]{background:#166534;font-size:clamp(15px,4.5vw,21px);}
+  .cell2048[data-v="2048"]{background:var(--accent);color:var(--accent-ink);font-size:clamp(15px,4.5vw,21px);}
+  @media (prefers-color-scheme: light){
+    .cell2048[data-v="2"]{background:#dfe3f2;} .cell2048[data-v="4"]{background:#c3cbe8;}
+  }
+  .moveBtns{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:6px;}
+  .moveBtns button{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:12px;font-size:18px;cursor:pointer;}
+  .moveBtns .sp{visibility:hidden;}
+
+  /* Chess */
+  .chwrap{--sql:#ecdcb9;--sqd:#b58863;--pw:#ffffff;--pb:#211d19;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;}
+  .chwrap.set-neon{--sql:#232355;--sqd:#141433;--pw:#67e8f9;--pb:#f0abfc;}
+  .chwrap.set-frost{--sql:#dff3ff;--sqd:#8fc3e8;--pw:#ffffff;--pb:#155e86;}
+  .chwrap.set-gold{--sql:#f7e08b;--sqd:#c39a3b;--pw:#fffbe8;--pb:#4a3205;}
+  .chboard{display:grid;grid-template-columns:repeat(8,1fr);width:min(400px,92vw);border:3px solid var(--line);border-radius:8px;overflow:hidden;touch-action:manipulation;}
+  .chsq{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:clamp(21px,6.2vw,33px);cursor:pointer;user-select:none;line-height:1;position:relative;}
+  .chsq.l{background:var(--sql);} .chsq.d{background:var(--sqd);}
+  .chsq.sel{box-shadow:inset 0 0 0 3px var(--accent);}
+  .chsq.hint::after{content:"";position:absolute;width:30%;height:30%;border-radius:50%;background:rgba(20,20,20,.35);}
+  .chsq.cap{box-shadow:inset 0 0 0 3px #f87171;}
+  .chsq.last{background-image:linear-gradient(rgba(255,210,63,.45),rgba(255,210,63,.45));}
+  .chpw{color:var(--pw);text-shadow:0 1px 2px rgba(0,0,0,.75),0 0 1px rgba(0,0,0,.9);}
+  .chpb{color:var(--pb);text-shadow:0 1px 1px rgba(255,255,255,.3);}
+  .set-neon .chpw{text-shadow:0 0 8px rgba(103,232,249,.9);}
+  .set-neon .chpb{text-shadow:0 0 8px rgba(240,171,252,.9);}
+  .lvlgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;width:min(400px,92vw);}
+  .lvlbtn{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px 0;font:inherit;font-weight:700;font-size:14px;cursor:pointer;font-family:"IBM Plex Mono",monospace;}
+  .lvlbtn.cur{border-color:var(--accent);color:var(--accent);}
+  .lvlbtn.done{border-color:var(--snake);color:var(--snake);}
+  .lvlbtn:disabled{opacity:.38;cursor:not-allowed;}
+  .chstatus{font-size:14.5px;color:var(--ink-dim);text-align:center;line-height:1.5;max-width:52ch;}
+  .chstatus b{color:var(--ink);}
+  .setrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .setbtn{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}
+  .setbtn.on{border-color:var(--accent);color:var(--accent);}
+  .setbtn:disabled{opacity:.4;cursor:not-allowed;}
+
+  @media (max-width:520px){
+    .wrap{padding:14px 12px 40px;}
+    .grid{grid-template-columns:1fr;}
+    .coinchip{margin-left:0;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ LOBBY ============ -->
+  <section id="lobby">
+    <div class="hero">
+      <h1>Game <span class="hl">Arcade</span></h1>
+      <p>Ab pure <b>10 games</b> — Fruit Slice, Runner, Chess, Fishing aur 6 classics! Har game me khelo, <b>🪙 coins</b> kamao, aur coins se shop me naye snakes, chess piece sets aur power-ups unlock karo. Koi download nahi, koi sign-up nahi.</p>
+      <div class="statbar">
+        <span class="stat">Games <b>10</b></span>
+        <span class="stat coins">🪙 Coins <b id="statCoins">0</b></span>
+        <span class="stat">Is session me khele <b id="statPlays">0</b></span>
+        <span class="stat">Total score <b id="statTotal">0</b></span>
+      </div>
+      <div class="vercel-note"><b>Vercel par daalna hai?</b> Ye poori arcade ek hi <span class="mono">index.html</span> file hai — saare 10 games isi ek file me hain. File ko Vercel par drag-and-drop kar do, site live ho jayegi aur log ek hi link se saare games khel payenge.</div>
+    </div>
+
+    <h2 class="secttl">🎮 Game Chuno</h2>
+    <p class="secsub">Har game ke score se coins milte hain — jitna achha kheloge, utne zyada coins!</p>
+
+    <div class="grid" id="gameGrid">
+      <button class="card" data-game="fruit">
+        <span class="art"><svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true"><text x="34" y="42" font-size="30" text-anchor="middle">🍉</text><text x="66" y="38" font-size="24" text-anchor="middle">🍓</text><text x="94" y="44" font-size="26" text-anchor="middle">🍍</text><path d="M8 50 Q60 6 112 22" stroke="#f87171" stroke-width="3" fill="none" stroke-dasharray="5 4" stroke-linecap="round"/></svg></span>
+        <h3>Fruit Slice<span class="newtag">NEW</span></h3>
+        <p>Udate hue fruits ko swipe karke kaato! Combo par bonus points — lekin bomb 💣 se bachna, aur fruit miss hua to life gayi!</p>
+        <span class="meta"><span class="best">Best: <span data-best="fruit">0</span></span><span class="reward">🪙 Score ÷ 4 coins</span><span class="playbtn">▶ Play</span></span>
+      </button>
+
+      <button class="card" data-game="runner">
+        <span class="art"><svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true"><text x="30" y="40" font-size="28" text-anchor="middle">🏃</text><text x="86" y="42" font-size="22" text-anchor="middle">🌵</text><text x="104" y="26" font-size="16" text-anchor="middle">🦅</text><line x1="6" y1="48" x2="114" y2="48" stroke="#2dd4bf" stroke-width="3" stroke-linecap="round"/></svg></span>
+        <h3>Turbo Runner<span class="newtag">NEW</span></h3>
+        <p>Endless running game! Cactus par jump karo, eagle ke neeche duck karo. Speed badhti jayegi — kitne meter bhaag sakte ho?</p>
+        <span class="meta"><span class="best">Best: <span data-best="runner">0</span>m</span><span class="reward">🪙 Distance ÷ 15 coins</span><span class="playbtn">▶ Play</span></span>
+      </button>
+
+      <button class="card" data-game="chess">
+        <span class="art"><svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true"><rect x="30" y="6" width="60" height="48" rx="4" fill="#262b42"/><rect x="30" y="6" width="15" height="12" fill="#ecdcb9"/><rect x="60" y="6" width="15" height="12" fill="#ecdcb9"/><rect x="45" y="18" width="15" height="12" fill="#ecdcb9"/><rect x="75" y="18" width="15" height="12" fill="#ecdcb9"/><rect x="30" y="30" width="15" height="12" fill="#ecdcb9"/><rect x="60" y="30" width="15" height="12" fill="#ecdcb9"/><rect x="45" y="42" width="15" height="12" fill="#ecdcb9"/><rect x="75" y="42" width="15" height="12" fill="#ecdcb9"/><text x="60" y="42" font-size="26" text-anchor="middle" fill="#e7c873">♞</text></svg></span>
+        <h3>Chess vs Computer<span class="newtag">NEW</span></h3>
+        <p>Computer ke khilaf chess! Pure <b>20 levels</b> — har level jeetne par agla unlock hoga aur computer aur smart hota jayega. Jeet par bade coin rewards!</p>
+        <span class="meta"><span class="best">Level clear: <span data-best="chess">—</span></span><span class="reward">🪙 Jeet = 40–240 coins</span><span class="playbtn">▶ Play</span></span>
+      </button>
+
+      <button class="card" data-game="fishing">
+        <span class="art"><svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true"><text x="24" y="24" font-size="20" text-anchor="middle">🚤</text><path d="M30 22 L44 44" stroke="#60a5fa" stroke-width="2"/><text x="50" y="52" font-size="18" text-anchor="middle">🪝</text><text x="88" y="48" font-size="24" text-anchor="middle">🐠</text><path d="M0 30 Q15 26 30 30 T60 30 T90 30 T120 30" stroke="#60a5fa" stroke-width="2" fill="none" opacity=".6"/></svg></span>
+        <h3>Fishing Master<span class="newtag">NEW</span></h3>
+        <p>60 second me hook daalo aur machhliyan pakdo! Chhoti machhli 10 points, golden fish 100, shark 150 — boot pakda to sirf 2!</p>
+        <span class="meta"><span class="best">Best: <span data-best="fishing">0</span></span><span class="reward">🪙 Score ÷ 4 coins</span><span class="playbtn">▶ Play</span></span>
+      </button>
+
+      <button class="card" data-game="snake">
+        <span class="art"><svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true"><path d="M8 44 Q30 44 30 26 Q30 10 52 10 L78 10" fill="none" stroke="#4ade80" stroke-width="9" stroke-linecap="round"/><circle cx="86" cy="10" r="7" fill="#4ade80"/><circle cx="104" cy="38" r="8" fill="#f87171"/><path d="M104 30 q2-6 8-7" stroke="#4ade80" stroke-width="3" fill="none"/></svg></span>
+        <h3>Snake Game</h3>
+        <p>Classic saanp wala game. Seb khao, lambe bano — har 5th seb ke baad golden apple (+50)! Shop se elite snakes aur power-ups unlock karo.</p>
+        <span class="meta"><span class="best">Best: <span data-best="snake">0</span></span><span class="reward">🪙 Score ÷ 10 coins</span><span class="playbtn">▶ Play</span></span>
+      </button>
+
+      <button class="card" data-game="flappy">
+        <span class="art"><svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true"><rect x="86" y="0" width="16" height="20" fill="#fbbf24"/><rect x="86" y="40" width="16" height="20" fill="#fbbf24"/><circle cx="44" cy="30" r="11" fill="#fbbf24"/><circle cx="48" cy="27" r="2.4" fill="#10121c"/><path d="M54 31 l10 3 -10 3 z" fill="#fb923c"/><path d="M36 24 q-8-6-14-2 q7 2 8 8" fill="#fde68a"/></svg></span>
+        <h3>Flappy Tap</h3>
+        <p>Tap karke chidiya ko udao aur pipes ke beech se nikalo. Ek galti aur game over — kitna door ja sakte ho?</p>
+        <span class="meta"><span class="best">Best: <span data-best="flappy">0</span></span><span class="reward">🪙 Score ÷ 2 coins</span><span class="playbtn">▶ Play</span></span>
+      </button>
+
+      <button class="card" data-game="memory">
+        <span class="art"><svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true"><rect x="18" y="8" width="36" height="44" rx="6" fill="#f472b6"/><rect x="66" y="8" width="36" height="44" rx="6" fill="#262b42" stroke="#f472b6" stroke-width="2"/><text x="84" y="40" font-size="22" text-anchor="middle" fill="#f472b6" font-family="sans-serif" font-weight="700">?</text><text x="36" y="40" font-size="20" text-anchor="middle">🍓</text></svg></span>
+        <h3>Memory Match</h3>
+        <p>Cards ulta karke jodi milao. 8 pairs, kam moves aur kam time me khatm karo — yaadash ki asli pariksha!</p>
+        <span class="meta"><span class="best">Best time: <span data-best="memory">—</span></span><span class="reward">🪙 Jeet par 15–40 coins</span><span class="playbtn">▶ Play</span></span>
+      </button>
+
+      <button class="card" data-game="whack">
+        <span class="art"><svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true"><ellipse cx="34" cy="48" rx="24" ry="7" fill="#262b42"/><ellipse cx="86" cy="48" rx="24" ry="7" fill="#262b42"/><text x="34" y="46" font-size="26" text-anchor="middle">🐹</text><text x="86" y="30" font-size="20" text-anchor="middle" opacity=".45">🐹</text></svg></span>
+        <h3>Whack-a-Mole</h3>
+        <p>30 second me jitne mole mar sakte ho maro! Golden mole kabhi-kabhi aata hai — uspar pure +30 points.</p>
+        <span class="meta"><span class="best">Best: <span data-best="whack">0</span></span><span class="reward">🪙 Score ÷ 10 coins</span><span class="playbtn">▶ Play</span></span>
+      </button>
+
+      <button class="card" data-game="g2048">
+        <span class="art"><svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true"><rect x="26" y="6" width="68" height="48" rx="6" fill="#262b42"/><rect x="32" y="12" width="26" height="16" rx="3" fill="#38bdf8"/><rect x="62" y="12" width="26" height="16" rx="3" fill="#b45309"/><rect x="32" y="32" width="26" height="16" rx="3" fill="#be3455"/><rect x="62" y="32" width="26" height="16" rx="3" fill="#ffd23f"/><text x="45" y="24" font-size="10" text-anchor="middle" fill="#10121c" font-family="monospace" font-weight="700">2</text><text x="75" y="24" font-size="10" text-anchor="middle" fill="#fff" font-family="monospace" font-weight="700">8</text><text x="45" y="44" font-size="10" text-anchor="middle" fill="#fff" font-family="monospace" font-weight="700">32</text><text x="75" y="44" font-size="10" text-anchor="middle" fill="#1a1600" font-family="monospace" font-weight="700">2048</text></svg></span>
+        <h3>2048 Puzzle</h3>
+        <p>Tiles slide karke same numbers jodo — 2 se 4, 4 se 8… kya tum 2048 wali tile bana paoge?</p>
+        <span class="meta"><span class="best">Best: <span data-best="g2048">0</span></span><span class="reward">🪙 Score ÷ 20 coins</span><span class="playbtn">▶ Play</span></span>
+      </button>
+
+      <button class="card" data-game="brick">
+        <span class="art"><svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true"><rect x="16" y="8" width="20" height="8" rx="2" fill="#a78bfa"/><rect x="40" y="8" width="20" height="8" rx="2" fill="#f472b6"/><rect x="64" y="8" width="20" height="8" rx="2" fill="#38bdf8"/><rect x="88" y="8" width="20" height="8" rx="2" fill="#4ade80"/><rect x="28" y="20" width="20" height="8" rx="2" fill="#fbbf24"/><rect x="52" y="20" width="20" height="8" rx="2" fill="#fb923c"/><rect x="76" y="20" width="20" height="8" rx="2" fill="#a78bfa"/><circle cx="60" cy="40" r="4" fill="#f2f3fa"/><rect x="42" y="50" width="36" height="6" rx="3" fill="#a78bfa"/></svg></span>
+        <h3>Brick Breaker</h3>
+        <p>Paddle se ball uchhalo aur saare bricks todo. 3 lives, har level par speed tez — ek bhi ball miss mat karna!</p>
+        <span class="meta"><span class="best">Best: <span data-best="brick">0</span></span><span class="reward">🪙 Score ÷ 10 coins</span><span class="playbtn">▶ Play</span></span>
+      </button>
+    </div>
+
+    <h2 class="secttl">🛒 Coin Shop</h2>
+    <p class="secsub">Games khel-khel kar coins kamao aur yahan kharcho — elite snakes, glowing skin, naye chess piece sets aur power-ups. Jo khareedoge wo isi session me tumhara rahega.</p>
+    <div class="shopgrid" id="shopGrid"></div>
+
+    <footer>Tip: Kisi bhi game me upar <b>← Saare Games</b> dabakar wapas lobby aa sakte ho. Coins, best scores aur unlocks is session ke liye yahin bane rahte hain — page band karne par reset ho jayenge, phir se kama lena! 😄</footer>
+  </section>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <section id="gameScreen">
+    <div class="topbar">
+      <button class="backbtn" id="backBtn">← Saare Games</button>
+      <h2 id="gameTitle">Game</h2>
+      <span class="coinchip">🪙 <b id="coinBal">0</b></span>
+    </div>
+    <div class="scorebar" id="scorebar"></div>
+    <div class="stage" id="stage"></div>
+  </section>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+/* ================= Arcade shell + Coins + Shop ================= */
+var TITLES = { snake:"Snake Game", flappy:"Flappy Tap", memory:"Memory Match", whack:"Whack-a-Mole", g2048:"2048 Puzzle", brick:"Brick Breaker", fruit:"Fruit Slice", runner:"Turbo Runner", chess:"Chess vs Computer", fishing:"Fishing Master" };
+var bests = { snake:0, flappy:0, memory:null, whack:0, g2048:0, brick:0, fruit:0, runner:0, chess:0, fishing:0 };
+var plays = 0, totalScore = 0;
+var current = null, cleanup = null;
+
+/* --- Wallet & unlocks (is session ke liye, memory me) --- */
+var wallet = 0;
+var owned = { skin_green:true, chess_classic:true, flappy_normal:true, brick_normal:true };
+var selected = { skin:'green', chessSet:'classic', flappy:'normal', brick:'normal' };
+var snakePower = 1;               /* 1..5 — zyada power = zyada score multiplier + tez speed */
+var chessUnlocked = 1;            /* sabse upar wala unlocked chess level */
+var chessLevel = 1;               /* abhi chuna hua chess level */
+
+var SNAKE_SKINS = {
+  green:{ body:'#22c55e', head:'#86efac', name:'Classic Green' },
+  blue:{ body:'#2563eb', head:'#93c5fd', name:'Ocean Blue' },
+  pink:{ body:'#ec4899', head:'#f9a8d4', name:'Berry Pink' },
+  purple:{ body:'#9333ea', head:'#d8b4fe', name:'Royal Purple' },
+  gold:{ body:'#d9a406', head:'#fde047', name:'Golden' },
+  glow:{ body:'#06b6d4', head:'#a5f3fc', name:'Glowing Neon', glow:'#22d3ee' }
+};
+var POWER_COST = [0, 0, 100, 200, 350, 550]; /* index = agla level (2..5) */
+
+var SHOP = [
+  { id:'skin_blue', type:'skin', val:'blue', icon:'🐍', cat:'Snake Skins', name:'Ocean Blue Snake', desc:'Gehre neele rang ka shandaar snake skin.', price:100 },
+  { id:'skin_pink', type:'skin', val:'pink', icon:'🐍', cat:'Snake Skins', name:'Berry Pink Snake', desc:'Gulabi chamak wala cute-but-deadly snake.', price:150 },
+  { id:'skin_purple', type:'skin', val:'purple', icon:'🐍', cat:'Snake Skins', name:'Royal Purple Snake', desc:'Shahi baingani rang — rajaon wala snake.', price:220 },
+  { id:'skin_gold', type:'skin', val:'gold', icon:'🐍', cat:'Snake Skins', name:'Golden Snake', desc:'Sunehra snake! Sabki nazar isi par jayegi.', price:400 },
+  { id:'skin_glow', type:'skin', val:'glow', icon:'✨', cat:'Snake Skins', name:'Glowing Neon Snake', desc:'Andhere me chamakta hua neon snake — sabse elite skin!', price:650 },
+  { id:'power', type:'power', val:'power', icon:'⚡', cat:'Power-Up', name:'Snake Power Level-Up', desc:'Har level par score multiplier +25% aur speed tez. Max Level 5.', price:0 },
+  { id:'chess_neon', type:'chess', val:'neon', icon:'♞', cat:'Chess Piece Sets', name:'Neon Night Set', desc:'Chamakte hue cyan-magenta pieces, dark board.', price:250 },
+  { id:'chess_frost', type:'chess', val:'frost', icon:'♜', cat:'Chess Piece Sets', name:'Frost Ice Set', desc:'Thanda neela barf wala board aur pieces.', price:350 },
+  { id:'chess_gold', type:'chess', val:'gold', icon:'♛', cat:'Chess Piece Sets', name:'Royal Gold Set', desc:'Sunehra shahi set — champions ke liye.', price:550 },
+  { id:'flappy_gold', type:'flappy', val:'gold', icon:'🐤', cat:'Extras', name:'Golden Bird', desc:'Flappy Tap ki chidiya sunehri ho jayegi.', price:200 },
+  { id:'brick_gold', type:'brick', val:'gold', icon:'🏓', cat:'Extras', name:'Golden Paddle', desc:'Brick Breaker ka paddle sunehra aur chauda (wide) — ball miss karna mushkil!', price:200 }
+];
+
+var lobbyEl = document.getElementById('lobby');
+var screenEl = document.getElementById('gameScreen');
+var stageEl = document.getElementById('stage');
+var scorebarEl = document.getElementById('scorebar');
+var toastEl = document.getElementById('toast');
+var toastTimer = null;
+
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2200);
+}
+function updateWallet(){
+  document.getElementById('statCoins').textContent = wallet;
+  var cb = document.getElementById('coinBal'); if(cb) cb.textContent = wallet;
+}
+function awardCoins(n, why){
+  n = Math.max(0, n|0);
+  if(n <= 0) return;
+  wallet += n;
+  updateWallet();
+  renderShop();
+  showToast('🪙 +' + n + ' coins' + (why ? ' — ' + why : '') + '!');
+}
+function setScores(chips){
+  scorebarEl.innerHTML = chips.map(function(c){
+    return '<span class="scorechip">'+c[0]+'<b id="sc_'+c[2]+'">'+c[1]+'</b></span>';
+  }).join('');
+}
+function setScore(id, v){ var el = document.getElementById('sc_'+id); if(el) el.textContent = v; }
+function reportScore(game, score, coins){
+  totalScore += Math.max(0, score|0);
+  document.getElementById('statTotal').textContent = totalScore;
+  if(game === 'memory'){
+    if(bests.memory === null || score < bests.memory) bests.memory = score;
+  } else if(game === 'chess'){
+    if(score > bests.chess) bests.chess = score;
+  } else if(score > bests[game]) bests[game] = score;
+  refreshBests();
+  if(coins === undefined) coins = Math.floor(Math.max(0, score|0) / 10);
+  awardCoins(coins);
+}
+function refreshBests(){
+  document.querySelectorAll('[data-best]').forEach(function(el){
+    var g = el.getAttribute('data-best');
+    if(g === 'memory') el.textContent = bests.memory === null ? '—' : bests.memory + 's';
+    else if(g === 'chess') el.textContent = bests.chess === 0 ? '—' : 'Level ' + bests.chess;
+    else el.textContent = bests[g];
+  });
+}
+function renderShop(){
+  var grid = document.getElementById('shopGrid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  /* Default free items bhi dikhao taaki select kar sako */
+  var all = [
+    { id:'skin_green', type:'skin', val:'green', icon:'🐍', cat:'Snake Skins', name:'Classic Green Snake', desc:'Shuruaat ka hara snake — free, hamesha tumhara.', price:0 },
+    { id:'chess_classic', type:'chess', val:'classic', icon:'♟', cat:'Chess Piece Sets', name:'Classic Wood Set', desc:'Purani shaan wala lakdi-rang chess set — free.', price:0 },
+    { id:'flappy_normal', type:'flappy', val:'normal', icon:'🐤', cat:'Extras', name:'Classic Bird', desc:'Aam peeli chidiya — free.', price:0 },
+    { id:'brick_normal', type:'brick', val:'normal', icon:'🏓', cat:'Extras', name:'Classic Paddle', desc:'Aam paddle — free.', price:0 }
+  ].concat(SHOP);
+  all.forEach(function(it){
+    var div = document.createElement('div');
+    div.className = 'shopitem';
+    var btnHtml, priceHtml;
+    if(it.type === 'power'){
+      if(snakePower >= 5){ btnHtml = '<button class="buybtn active" disabled>MAX ⚡5</button>'; priceHtml = '<span class="price">Level ' + snakePower + ' / 5</span>'; }
+      else {
+        var cost = POWER_COST[snakePower + 1];
+        priceHtml = '<span class="price">🪙 ' + cost + '</span>';
+        btnHtml = '<button class="buybtn" data-buy="power" ' + (wallet < cost ? 'disabled' : '') + '>Level ' + (snakePower+1) + ' Karo</button>';
+      }
+      div.innerHTML = '<span class="cat">' + it.cat + '</span><span class="ic">' + it.icon + '</span><h4>' + it.name + '</h4><p>' + it.desc + ' Abhi: <b>Level ' + snakePower + '</b> (score ×' + (1 + (snakePower-1)*0.25) + ')</p><div class="row">' + priceHtml + btnHtml + '</div>';
+    } else {
+      var isOwned = !!owned[it.id];
+      var isSel = selected[it.type] === it.val;
+      if(isSel) div.classList.add('equipped');
+      priceHtml = isOwned ? '<span class="price">Owned ✓</span>' : '<span class="price">🪙 ' + it.price + '</span>';
+      if(!isOwned) btnHtml = '<button class="buybtn" data-buy="' + it.id + '" ' + (wallet < it.price ? 'disabled' : '') + '>Kharido</button>';
+      else if(isSel) btnHtml = '<button class="buybtn active" disabled>Use ho raha ✓</button>';
+      else btnHtml = '<button class="buybtn sel" data-select="' + it.id + '">Use karo</button>';
+      div.innerHTML = '<span class="cat">' + it.cat + '</span><span class="ic">' + it.icon + '</span><h4>' + it.name + '</h4><p>' + it.desc + '</p><div class="row">' + priceHtml + btnHtml + '</div>';
+    }
+    grid.appendChild(div);
+  });
+  grid.querySelectorAll('[data-buy]').forEach(function(b){
+    b.addEventListener('click', function(){ buyItem(b.getAttribute('data-buy')); });
+  });
+  grid.querySelectorAll('[data-select]').forEach(function(b){
+    b.addEventListener('click', function(){ selectItem(b.getAttribute('data-select')); });
+  });
+}
+function findItem(id){
+  var all = [{ id:'skin_green', type:'skin', val:'green', price:0 }, { id:'chess_classic', type:'chess', val:'classic', price:0 }, { id:'flappy_normal', type:'flappy', val:'normal', price:0 }, { id:'brick_normal', type:'brick', val:'normal', price:0 }].concat(SHOP);
+  for(var i=0;i<all.length;i++) if(all[i].id === id) return all[i];
+  return null;
+}
+function buyItem(id){
+  if(id === 'power'){
+    if(snakePower >= 5) return;
+    var cost = POWER_COST[snakePower + 1];
+    if(wallet < cost) return;
+    wallet -= cost; snakePower++;
+    updateWallet(); renderShop();
+    showToast('⚡ Snake Power Level ' + snakePower + ' ho gaya!');
+    return;
+  }
+  var it = findItem(id);
+  if(!it || owned[id] || wallet < it.price) return;
+  wallet -= it.price;
+  owned[id] = true;
+  selected[it.type] = it.val;
+  updateWallet(); renderShop();
+  showToast('🎉 ' + it.name + ' unlock ho gaya!');
+}
+function selectItem(id){
+  var it = findItem(id);
+  if(!it || !owned[id]) return;
+  selected[it.type] = it.val;
+  renderShop();
+  showToast('✓ ' + it.name + ' select ho gaya!');
+}
+function openGame(game){
+  closeGame();
+  current = game;
+  plays++;
+  document.getElementById('statPlays').textContent = plays;
+  lobbyEl.style.display = 'none';
+  screenEl.style.display = 'block';
+  document.getElementById('gameTitle').textContent = TITLES[game];
+  window.scrollTo(0,0);
+  cleanup = GAMES[game](stageEl);
+}
+function closeGame(){
+  if(cleanup){ try{ cleanup(); }catch(e){} cleanup = null; }
+  stageEl.innerHTML = ''; scorebarEl.innerHTML = '';
+  current = null;
+}
+document.getElementById('backBtn').addEventListener('click', function(){
+  closeGame();
+  screenEl.style.display = 'none';
+  lobbyEl.style.display = 'block';
+  window.scrollTo(0,0);
+});
+document.querySelectorAll('.card').forEach(function(card){
+  card.addEventListener('click', function(){ openGame(card.getAttribute('data-game')); });
+});
+document.addEventListener('keydown', function(e){
+  if(!current && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].indexOf(e.key) >= 0) return;
+  if(current && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].indexOf(e.key) >= 0) e.preventDefault();
+});
+updateWallet();
+renderShop();
+
+/* ================= 1. SNAKE (skins + power) ================= */
+function gameSnake(stage){
+  var skin = SNAKE_SKINS[selected.skin] || SNAKE_SKINS.green;
+  var mult = 1 + (snakePower - 1) * 0.25;
+  var speed = 135 - (snakePower - 1) * 9;
+  stage.innerHTML =
+    '<p class="howto">Seb khao, lambe bano. Deewar ya khud se takrana = game over. Har 5th seb ke baad <b>golden apple (+50)</b> aata hai. Tumhara snake: <b>' + skin.name + '</b> · Power Level ' + snakePower + ' (score ×' + mult + '). Phone par swipe karo ya neeche ke buttons dabao.</p>' +
+    '<canvas id="snCv" width="336" height="336" style="background:#0d2013"></canvas>' +
+    '<div class="banner" id="snMsg">Start dabao!</div>' +
+    '<div class="btnrow"><button class="btn" id="snStart">▶ Start</button></div>' +
+    '<div class="dpad"><span class="sp"></span><button data-d="up" aria-label="Up">▲</button><span class="sp"></span><button data-d="left" aria-label="Left">◀</button><span class="sp"></span><button data-d="right" aria-label="Right">▶</button><span class="sp"></span><button data-d="down" aria-label="Down">▼</button><span class="sp"></span></div>';
+  setScores([['Score','0','score'],['Length','3','len'],['Best',bests.snake,'best']]);
+  var cv = stage.querySelector('#snCv'), ctx = cv.getContext('2d');
+  var N = 21, S = 16, snake, dir, nextDir, food, gold, eaten, score, timer = null, running = false, reported = false;
+
+  function placeFood(golden){
+    var p;
+    do { p = { x:(Math.random()*N)|0, y:(Math.random()*N)|0 }; }
+    while (snake.some(function(s){ return s.x===p.x && s.y===p.y; }));
+    if(golden) gold = p; else food = p;
+  }
+  function reset(){
+    snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+    dir = {x:1,y:0}; nextDir = dir; eaten = 0; score = 0; gold = null; reported = false;
+    placeFood(false);
+    setScore('score',0); setScore('len',3);
+    draw();
+  }
+  function draw(){
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#0d2013'; ctx.fillRect(0,0,336,336);
+    ctx.strokeStyle = 'rgba(255,255,255,.05)';
+    for(var i=1;i<N;i++){ ctx.beginPath(); ctx.moveTo(i*S,0); ctx.lineTo(i*S,336); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,i*S); ctx.lineTo(336,i*S); ctx.stroke(); }
+    function apple(p, color){ ctx.fillStyle = color; ctx.beginPath(); ctx.arc(p.x*S+8, p.y*S+8, 6, 0, 7); ctx.fill(); ctx.fillStyle='#4ade80'; ctx.fillRect(p.x*S+7, p.y*S+1, 2, 4); }
+    if(food) apple(food, '#f87171');
+    if(gold) apple(gold, '#ffd23f');
+    snake.forEach(function(s, i){
+      if(skin.glow){ ctx.shadowColor = skin.glow; ctx.shadowBlur = 12; } else ctx.shadowBlur = 0;
+      ctx.fillStyle = i===0 ? skin.head : skin.body;
+      ctx.fillRect(s.x*S+1, s.y*S+1, S-2, S-2);
+      if(i===0){ ctx.shadowBlur = 0; ctx.fillStyle='#0d2013'; ctx.fillRect(s.x*S+4, s.y*S+4, 3, 3); ctx.fillRect(s.x*S+9, s.y*S+4, 3, 3); }
+    });
+    ctx.shadowBlur = 0;
+  }
+  function step(){
+    dir = nextDir;
+    var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+    if(head.x<0||head.y<0||head.x>=N||head.y>=N||snake.some(function(s){return s.x===head.x&&s.y===head.y;})){
+      stop(); stage.querySelector('#snMsg').innerHTML = '<span style="color:#f87171">Game Over! Score: '+score+'</span>';
+      if(!reported){ reported = true; reportScore('snake', score, Math.floor(score/10)); }
+      return;
+    }
+    snake.unshift(head);
+    var ate = false;
+    if(food && head.x===food.x && head.y===food.y){ eaten++; score += Math.round(10*mult); ate = true; if(eaten%5===0) placeFood(true); placeFood(false); }
+    else if(gold && head.x===gold.x && head.y===gold.y){ score += Math.round(50*mult); gold = null; ate = true; }
+    if(!ate) snake.pop();
+    setScore('score', score); setScore('len', snake.length);
+    if(score > bests.snake) setScore('best', score);
+    draw();
+  }
+  function start(){
+    if(timer) clearInterval(timer);
+    reset(); running = true;
+    stage.querySelector('#snMsg').textContent = 'Khana shuru!';
+    timer = setInterval(step, speed);
+    stage.querySelector('#snStart').textContent = '↻ Restart';
+  }
+  function stop(){ running = false; if(timer){ clearInterval(timer); timer = null; } }
+  function setDir(d){
+    var m = { up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} };
+    var nd = m[d]; if(!nd) return;
+    if(nd.x === -dir.x && nd.y === -dir.y) return;
+    nextDir = nd;
+  }
+  stage.querySelector('#snStart').addEventListener('click', start);
+  stage.querySelectorAll('.dpad button').forEach(function(b){
+    b.addEventListener('click', function(){ setDir(b.getAttribute('data-d')); });
+  });
+  var tx = 0, ty = 0;
+  cv.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, {passive:true});
+  cv.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    if(Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+    setDir(Math.abs(dx) > Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up'));
+  }, {passive:true});
+  function keyH(e){
+    var m = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
+    if(m[e.key]) setDir(m[e.key]);
+  }
+  document.addEventListener('keydown', keyH);
+  reset();
+  return function(){ stop(); document.removeEventListener('keydown', keyH); };
+}
+
+/* ================= 2. FLAPPY ================= */
+function gameFlappy(stage){
+  var golden = selected.flappy === 'gold';
+  stage.innerHTML =
+    '<p class="howto">Canvas par tap/click karo ya Space dabao — chidiya upar udegi. Pipes ke beech se niklo, zameen aur pipe se takrana = game over.' + (golden ? ' Tumhari <b>Golden Bird</b> ud rahi hai! ✨' : '') + '</p>' +
+    '<canvas id="flCv" width="336" height="440" style="background:#7ec8e3"></canvas>' +
+    '<div class="banner" id="flMsg">Start dabao, phir tap karo!</div>' +
+    '<div class="btnrow"><button class="btn" id="flStart">▶ Start</button></div>';
+  setScores([['Score','0','score'],['Best',bests.flappy,'best']]);
+  var cv = stage.querySelector('#flCv'), ctx = cv.getContext('2d');
+  var W = 336, H = 440, bird, pipes, score, raf = null, running = false, dead = false, frame = 0, reported = false;
+
+  function reset(){
+    bird = { x:70, y:200, v:0 };
+    pipes = []; score = 0; frame = 0; dead = false; reported = false;
+    setScore('score', 0);
+    draw();
+  }
+  function draw(){
+    var sky = ctx.createLinearGradient(0,0,0,H); sky.addColorStop(0,'#7ec8e3'); sky.addColorStop(1,'#cdeffd');
+    ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = 'rgba(255,255,255,.8)';
+    [[40,60],[180,40],[270,90]].forEach(function(c){ ctx.beginPath(); ctx.arc(c[0],c[1],14,0,7); ctx.arc(c[0]+16,c[1]+3,11,0,7); ctx.fill(); });
+    pipes.forEach(function(p){
+      ctx.fillStyle = '#3f9e4d';
+      ctx.fillRect(p.x, 0, 56, p.top); ctx.fillRect(p.x, p.top + 120, 56, H - p.top - 120 - 26);
+      ctx.fillStyle = '#357f40';
+      ctx.fillRect(p.x-3, p.top-14, 62, 14); ctx.fillRect(p.x-3, p.top+120, 62, 14);
+    });
+    ctx.fillStyle = '#8a6d3b'; ctx.fillRect(0, H-26, W, 26);
+    ctx.fillStyle = '#5da24a'; ctx.fillRect(0, H-26, W, 8);
+    ctx.save(); ctx.translate(bird.x, bird.y);
+    if(golden){ ctx.shadowColor = '#ffd23f'; ctx.shadowBlur = 16; }
+    ctx.fillStyle = golden ? '#ffd23f' : '#ffd23f'; ctx.beginPath(); ctx.arc(0,0,13,0,7); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = golden ? '#fff3b0' : '#fde68a'; ctx.beginPath(); ctx.ellipse(-6,3,7,5,-0.5,0,7); ctx.fill();
+    ctx.fillStyle = '#10121c'; ctx.beginPath(); ctx.arc(5,-4,2.4,0,7); ctx.fill();
+    ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.moveTo(11,-1); ctx.lineTo(20,2); ctx.lineTo(11,5); ctx.fill();
+    ctx.restore();
+    if(dead){ ctx.fillStyle='rgba(16,18,28,.45)'; ctx.fillRect(0,0,W,H); }
+  }
+  function loop(){
+    if(!running) return;
+    frame++;
+    bird.v += 0.45; bird.y += bird.v;
+    if(frame % 95 === 0){ var top = 50 + Math.random()*(H-270); pipes.push({ x:W+10, top:top, passed:false }); }
+    pipes.forEach(function(p){
+      p.x -= 2.4;
+      if(!p.passed && p.x + 56 < bird.x){ p.passed = true; score++; setScore('score', score); if(score>bests.flappy) setScore('best', score); }
+    });
+    pipes = pipes.filter(function(p){ return p.x > -70; });
+    var hit = bird.y > H-26-12 || bird.y < 12;
+    if(!hit) pipes.forEach(function(p){
+      if(bird.x+11 > p.x && bird.x-11 < p.x+56 && (bird.y-11 < p.top || bird.y+11 > p.top+120)) hit = true;
+    });
+    draw();
+    if(hit){
+      running = false; dead = true; draw();
+      stage.querySelector('#flMsg').innerHTML = '<span style="color:#f87171">Game Over! Score: '+score+'</span>';
+      if(!reported){ reported = true; reportScore('flappy', score, Math.floor(score/2)); }
+      return;
+    }
+    raf = requestAnimationFrame(loop);
+  }
+  function flap(){ if(running) bird.v = -7.6; }
+  function start(){
+    reset(); running = true;
+    stage.querySelector('#flMsg').textContent = 'Tap! Tap! Tap!';
+    stage.querySelector('#flStart').textContent = '↻ Restart';
+    if(raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  }
+  cv.addEventListener('pointerdown', function(e){ e.preventDefault(); flap(); });
+  stage.querySelector('#flStart').addEventListener('click', start);
+  function keyH(e){ if(e.key === ' '){ flap(); } }
+  document.addEventListener('keydown', keyH);
+  reset();
+  return function(){ running = false; if(raf) cancelAnimationFrame(raf); document.removeEventListener('keydown', keyH); };
+}
+
+/* ================= 3. MEMORY ================= */
+function gameMemory(stage){
+  stage.innerHTML =
+    '<p class="howto">Do cards ulta karke same emoji wali jodi milao. Saari 8 jodiyan milte hi jeet! Kam moves, kam time = zyada coins (15–40).</p>' +
+    '<div class="memgrid" id="memGrid"></div>' +
+    '<div class="banner" id="memMsg">Koi bhi card dabao, game shuru!</div>' +
+    '<div class="btnrow"><button class="btn" id="memReset">↻ Naya Game</button></div>';
+  setScores([['Moves','0','moves'],['Pairs','0 / 8','pairs'],['Time','0s','time']]);
+  var EMOJI = ['🍓','🚀','🐶','🎸','🍕','⚽','🦋','🍩'];
+  var grid = stage.querySelector('#memGrid');
+  var first = null, lock = false, moves = 0, pairs = 0, secs = 0, timer = null, started = false, reported = false;
+
+  function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=(Math.random()*(i+1))|0; var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+  function startTimer(){
+    if(timer) return;
+    timer = setInterval(function(){ secs++; setScore('time', secs+'s'); }, 1000);
+  }
+  function build(){
+    if(timer){ clearInterval(timer); timer = null; }
+    first = null; lock = false; moves = 0; pairs = 0; secs = 0; started = false; reported = false;
+    setScore('moves',0); setScore('pairs','0 / 8'); setScore('time','0s');
+    stage.querySelector('#memMsg').textContent = 'Koi bhi card dabao, game shuru!';
+    grid.innerHTML = '';
+    shuffle(EMOJI.concat(EMOJI)).forEach(function(em){
+      var b = document.createElement('button');
+      b.className = 'memcard'; b.dataset.emoji = em; b.setAttribute('aria-label','Card');
+      b.innerHTML = '<span class="back">?</span><span class="face">'+em+'</span>';
+      b.querySelector('.face').style.display = 'none';
+      b.addEventListener('click', function(){ flip(b); });
+      grid.appendChild(b);
+    });
+  }
+  function flip(b){
+    if(lock || b.classList.contains('flip') || b.classList.contains('done')) return;
+    if(!started){ started = true; startTimer(); }
+    b.classList.add('flip');
+    b.querySelector('.back').style.display = 'none';
+    b.querySelector('.face').style.display = '';
+    if(!first){ first = b; return; }
+    moves++; setScore('moves', moves);
+    if(first.dataset.emoji === b.dataset.emoji){
+      first.classList.add('done'); b.classList.add('done');
+      first = null; pairs++; setScore('pairs', pairs + ' / 8');
+      if(pairs === 8){
+        if(timer){ clearInterval(timer); timer = null; }
+        var coins = Math.max(15, 42 - Math.floor(secs/3) - Math.max(0, moves - 12));
+        stage.querySelector('#memMsg').innerHTML = '<span style="color:#4ade80">🎉 Jeet gaye! '+moves+' moves, '+secs+' second me!</span>';
+        if(!reported){ reported = true; reportScore('memory', secs, coins); }
+      }
+    } else {
+      lock = true;
+      var a = first; first = null;
+      setTimeout(function(){
+        [a,b].forEach(function(c){
+          c.classList.remove('flip');
+          c.querySelector('.back').style.display = '';
+          c.querySelector('.face').style.display = 'none';
+        });
+        lock = false;
+      }, 750);
+    }
+  }
+  stage.querySelector('#memReset').addEventListener('click', build);
+  build();
+  return function(){ if(timer) clearInterval(timer); };
+}
+
+/* ================= 4. WHACK-A-MOLE ================= */
+function gameWhack(stage){
+  stage.innerHTML =
+    '<p class="howto">30 second ka time hai! Mole dikhte hi tap karo (+10). <b>Golden mole = +30</b>, lekin bomb 💣 se bachna — wo −20 karega!</p>' +
+    '<div class="holes" id="wkHoles"></div>' +
+    '<div class="banner" id="wkMsg">Start dabao!</div>' +
+    '<div class="btnrow"><button class="btn" id="wkStart">▶ Start</button></div>';
+  setScores([['Score','0','score'],['Time','30s','time'],['Best',bests.whack,'best']]);
+  var holesEl = stage.querySelector('#wkHoles');
+  var holes = [], score = 0, timeLeft = 30, tick = null, spawn = null, running = false, reported = false;
+  for(var i=0;i<9;i++){
+    var h = document.createElement('div');
+    h.className = 'hole'; h.innerHTML = '<span class="mole"></span>';
+    (function(hole){
+      hole.addEventListener('pointerdown', function(){
+        if(!running || !hole.classList.contains('up')) return;
+        var type = hole.dataset.type;
+        if(type === 'gold'){ score += 30; }
+        else if(type === 'bomb'){ score = Math.max(0, score - 20); }
+        else score += 10;
+        hole.classList.remove('up','gold'); hole.dataset.type = '';
+        setScore('score', score); if(score > bests.whack) setScore('best', score);
+      });
+    })(h);
+    holesEl.appendChild(h); holes.push(h);
+  }
+  function spawnMole(){
+    var empty = holes.filter(function(h){ return !h.classList.contains('up'); });
+    if(!empty.length) return;
+    var hole = empty[(Math.random()*empty.length)|0];
+    var r = Math.random();
+    var type = r < 0.12 ? 'gold' : (r < 0.22 ? 'bomb' : 'mole');
+    hole.dataset.type = type;
+    hole.querySelector('.mole').textContent = type === 'gold' ? '🐹' : (type === 'bomb' ? '💣' : '🐹');
+    hole.classList.toggle('gold', type === 'gold');
+    hole.style.filter = type === 'gold' ? 'sepia(1) saturate(4) hue-rotate(5deg)' : '';
+    hole.classList.add('up');
+    setTimeout(function(){ hole.classList.remove('up','gold'); hole.style.filter=''; }, 650 + Math.random()*450);
+  }
+  function start(){
+    if(tick) clearInterval(tick); if(spawn) clearInterval(spawn);
+    score = 0; timeLeft = 30; running = true; reported = false;
+    setScore('score', 0); setScore('time', '30s');
+    stage.querySelector('#wkMsg').textContent = 'Maro! Maro!';
+    stage.querySelector('#wkStart').textContent = '↻ Restart';
+    spawn = setInterval(spawnMole, 620);
+    tick = setInterval(function(){
+      timeLeft--; setScore('time', timeLeft + 's');
+      if(timeLeft <= 0){
+        clearInterval(tick); clearInterval(spawn); running = false;
+        holes.forEach(function(h){ h.classList.remove('up','gold'); });
+        stage.querySelector('#wkMsg').innerHTML = '<span style="color:#4ade80">Time khatm! Score: '+score+'</span>';
+        if(!reported){ reported = true; reportScore('whack', score, Math.floor(score/10)); }
+      }
+    }, 1000);
+  }
+  stage.querySelector('#wkStart').addEventListener('click', start);
+  return function(){ if(tick) clearInterval(tick); if(spawn) clearInterval(spawn); };
+}
+
+/* ================= 5. 2048 ================= */
+function game2048(stage){
+  stage.innerHTML =
+    '<p class="howto">Tiles ko ek disha me slide karo — same number wale tiles jud jayenge aur double ho jayenge. Board par swipe karo, arrow keys ya neeche ke buttons use karo.</p>' +
+    '<div class="board2048" id="bd"></div>' +
+    '<div class="banner" id="gMsg">2048 banane ki koshish karo!</div>' +
+    '<div class="btnrow"><button class="btn" id="gReset">↻ Naya Game</button></div>' +
+    '<div class="moveBtns"><span class="sp"></span><button data-m="up" aria-label="Up">▲</button><span class="sp"></span><button data-m="left" aria-label="Left">◀</button><span class="sp"></span><button data-m="right" aria-label="Right">▶</button><span class="sp"></span><button data-m="down" aria-label="Down">▼</button><span class="sp"></span></div>';
+  setScores([['Score','0','score'],['Best',bests.g2048,'best']]);
+  var bd = stage.querySelector('#bd');
+  var grid, score, over, won, reported;
+
+  function addRandom(){
+    var empty = [];
+    grid.forEach(function(row, r){ row.forEach(function(v, c){ if(!v) empty.push([r,c]); }); });
+    if(!empty.length) return;
+    var cell = empty[(Math.random()*empty.length)|0];
+    grid[cell[0]][cell[1]] = Math.random() < 0.9 ? 2 : 4;
+  }
+  function render(){
+    bd.innerHTML = '';
+    grid.forEach(function(row){ row.forEach(function(v){
+      var d = document.createElement('div');
+      d.className = 'cell2048'; if(v) d.dataset.v = v;
+      d.textContent = v || '';
+      bd.appendChild(d);
+    }); });
+    setScore('score', score); if(score > bests.g2048) setScore('best', score);
+  }
+  function slide(row){
+    var arr = row.filter(function(v){ return v; }), gained = 0;
+    for(var i=0;i<arr.length-1;i++){
+      if(arr[i] === arr[i+1]){ arr[i] *= 2; gained += arr[i]; if(arr[i] === 2048 && !won){ won = true; stage.querySelector('#gMsg').innerHTML = '<span style="color:#4ade80">🎉 2048 bana liya! Aage bhi khel sakte ho.</span>'; } arr.splice(i+1,1); }
+    }
+    while(arr.length < 4) arr.push(0);
+    return { row: arr, gained: gained };
+  }
+  function move(dirn){
+    if(over) return;
+    var before = JSON.stringify(grid), gained = 0;
+    function getLine(i){
+      if(dirn === 'left') return grid[i].slice();
+      if(dirn === 'right') return grid[i].slice().reverse();
+      if(dirn === 'up') return [grid[0][i], grid[1][i], grid[2][i], grid[3][i]];
+      return [grid[3][i], grid[2][i], grid[1][i], grid[0][i]];
+    }
+    function setLine(i, line){
+      if(dirn === 'left') grid[i] = line;
+      else if(dirn === 'right') grid[i] = line.slice().reverse();
+      else if(dirn === 'up') { for(var r=0;r<4;r++) grid[r][i] = line[r]; }
+      else { for(var r=0;r<4;r++) grid[3-r][i] = line[r]; }
+    }
+    for(var i=0;i<4;i++){
+      var res = slide(getLine(i)); gained += res.gained; setLine(i, res.row);
+    }
+    if(JSON.stringify(grid) === before) return;
+    score += gained; addRandom(); render();
+    if(!canMove()){
+      over = true;
+      stage.querySelector('#gMsg').innerHTML = '<span style="color:#f87171">Game Over! Score: '+score+'</span>';
+      if(!reported){ reported = true; reportScore('g2048', score, Math.floor(score/20)); }
+    }
+  }
+  function canMove(){
+    for(var r=0;r<4;r++) for(var c=0;c<4;c++){
+      if(!grid[r][c]) return true;
+      if(c<3 && grid[r][c] === grid[r][c+1]) return true;
+      if(r<3 && grid[r][c] === grid[r+1][c]) return true;
+    }
+    return false;
+  }
+  function build(){
+    grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    score = 0; over = false; won = false; reported = false;
+    stage.querySelector('#gMsg').textContent = '2048 banane ki koshish karo!';
+    addRandom(); addRandom(); render();
+  }
+  stage.querySelector('#gReset').addEventListener('click', build);
+  stage.querySelectorAll('.moveBtns button').forEach(function(b){
+    b.addEventListener('click', function(){ move(b.getAttribute('data-m')); });
+  });
+  var tx = 0, ty = 0;
+  bd.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, {passive:true});
+  bd.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    if(Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+    move(Math.abs(dx) > Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up'));
+  }, {passive:true});
+  function keyH(e){
+    var m = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
+    if(m[e.key]) move(m[e.key]);
+  }
+  document.addEventListener('keydown', keyH);
+  build();
+  return function(){ document.removeEventListener('keydown', keyH); };
+}
+
+/* ================= 6. BRICK BREAKER (golden paddle) ================= */
+function gameBrick(stage){
+  var golden = selected.brick === 'gold';
+  stage.innerHTML =
+    '<p class="howto">Paddle ko drag karke (ya mouse se) ball ko uchhalo aur saare bricks todo. Ball neeche giri to ek life gayi — kul 3 lives hain. Level badhne par speed tez hoti hai!' + (golden ? ' Tumhara <b>Golden Paddle</b> chauda hai — miss karna mushkil! ✨' : '') + '</p>' +
+    '<canvas id="brCv" width="336" height="420" style="background:#141126"></canvas>' +
+    '<div class="banner" id="brMsg">Start dabao!</div>' +
+    '<div class="btnrow"><button class="btn" id="brStart">▶ Start</button></div>';
+  setScores([['Score','0','score'],['Lives','3','lives'],['Level','1','level'],['Best',bests.brick,'best']]);
+  var cv = stage.querySelector('#brCv'), ctx = cv.getContext('2d');
+  var W = 336, H = 420;
+  var COLORS = ['#a78bfa','#f472b6','#38bdf8','#4ade80','#fbbf24'];
+  var paddle, ball, bricks, score, lives, level, raf = null, running = false, reported = false;
+
+  function buildBricks(){
+    bricks = [];
+    var rows = 4 + Math.min(level - 1, 2), cols = 6, bw = 48, bh = 16, gap = 6, ox = (W - (cols*bw + (cols-1)*gap)) / 2;
+    for(var r=0;r<rows;r++) for(var c=0;c<cols;c++)
+      bricks.push({ x: ox + c*(bw+gap), y: 46 + r*(bh+gap), w: bw, h: bh, color: COLORS[r % COLORS.length], alive: true });
+  }
+  function resetBall(){
+    var sp = 3 + (level - 1) * 0.5;
+    ball = { x: W/2, y: H - 60, vx: sp * (Math.random() < 0.5 ? -0.7 : 0.7), vy: -sp };
+    var pw = golden ? 104 : 76;
+    paddle = { x: W/2 - pw/2, y: H - 26, w: pw, h: 10 };
+  }
+  function reset(full){
+    if(full){ score = 0; lives = 3; level = 1; reported = false; }
+    buildBricks(); resetBall();
+    setScore('score', score); setScore('lives', lives); setScore('level', level);
+    draw();
+  }
+  function draw(){
+    ctx.fillStyle = '#141126'; ctx.fillRect(0,0,W,H);
+    bricks.forEach(function(b){ if(b.alive){ ctx.fillStyle = b.color; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 4); ctx.fill(); } });
+    if(golden){ ctx.shadowColor = '#ffd23f'; ctx.shadowBlur = 12; }
+    ctx.fillStyle = golden ? '#ffd23f' : '#e9e7ff'; ctx.beginPath(); ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 5); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(ball.x, ball.y, 6, 0, 7); ctx.fill();
+  }
+  function loop(){
+    if(!running) return;
+    ball.x += ball.vx; ball.y += ball.vy;
+    if(ball.x < 6){ ball.x = 6; ball.vx *= -1; }
+    if(ball.x > W-6){ ball.x = W-6; ball.vx *= -1; }
+    if(ball.y < 6){ ball.y = 6; ball.vy *= -1; }
+    if(ball.vy > 0 && ball.y + 6 >= paddle.y && ball.y + 6 <= paddle.y + paddle.h + 6 && ball.x >= paddle.x && ball.x <= paddle.x + paddle.w){
+      var rel = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
+      var sp = Math.hypot(ball.vx, ball.vy);
+      ball.vx = sp * Math.sin(rel * 1.05); ball.vy = -Math.abs(sp * Math.cos(rel * 1.05));
+      ball.y = paddle.y - 7;
+    }
+    for(var i=0;i<bricks.length;i++){
+      var b = bricks[i];
+      if(b.alive && ball.x+6 > b.x && ball.x-6 < b.x+b.w && ball.y+6 > b.y && ball.y-6 < b.y+b.h){
+        b.alive = false; ball.vy *= -1; score += 10;
+        setScore('score', score); if(score > bests.brick) setScore('best', score);
+        break;
+      }
+    }
+    if(bricks.every(function(b){ return !b.alive; })){
+      level++; setScore('level', level);
+      stage.querySelector('#brMsg').textContent = 'Level ' + level + '! Speed badh gayi 🔥';
+      buildBricks(); resetBall();
+    }
+    if(ball.y > H + 10){
+      lives--; setScore('lives', lives);
+      if(lives <= 0){
+        running = false; draw();
+        stage.querySelector('#brMsg').innerHTML = '<span style="color:#f87171">Game Over! Score: '+score+'</span>';
+        if(!reported){ reported = true; reportScore('brick', score, Math.floor(score/10)); }
+        return;
+      }
+      stage.querySelector('#brMsg').textContent = 'Ball gayi! Lives bachi: ' + lives;
+      resetBall();
+    }
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+  function movePaddle(clientX){
+    var rect = cv.getBoundingClientRect();
+    var x = (clientX - rect.left) * (W / rect.width);
+    paddle.x = Math.max(0, Math.min(W - paddle.w, x - paddle.w/2));
+    if(!running) draw();
+  }
+  cv.addEventListener('pointerdown', function(e){ movePaddle(e.clientX); });
+  cv.addEventListener('pointermove', function(e){ if(e.buttons || e.pointerType === 'touch') movePaddle(e.clientX); });
+  function start(){
+    if(raf) cancelAnimationFrame(raf);
+    reset(true); running = true;
+    stage.querySelector('#brMsg').textContent = 'Bricks todo!';
+    stage.querySelector('#brStart').textContent = '↻ Restart';
+    raf = requestAnimationFrame(loop);
+  }
+  stage.querySelector('#brStart').addEventListener('click', start);
+  reset(true);
+  return function(){ running = false; if(raf) cancelAnimationFrame(raf); };
+}
+
+/* ================= 7. FRUIT SLICE ================= */
+function gameFruit(stage){
+  stage.innerHTML =
+    '<p class="howto">Canvas par ungli/mouse <b>swipe</b> karke udte fruits kaato! Ek swipe me 3+ fruits = <b>combo bonus</b>. Bomb 💣 kaata to life gayi, fruit neeche gira to bhi life gayi — kul 3 lives.</p>' +
+    '<canvas id="frCv" width="336" height="440" style="background:#1c1033"></canvas>' +
+    '<div class="banner" id="frMsg">Start dabao aur kaatna shuru!</div>' +
+    '<div class="btnrow"><button class="btn" id="frStart">▶ Start</button></div>';
+  setScores([['Score','0','score'],['Lives','❤❤❤','lives'],['Best',bests.fruit,'best']]);
+  var cv = stage.querySelector('#frCv'), ctx = cv.getContext('2d');
+  var W = 336, H = 440;
+  var FRUITS = ['🍉','🍓','🍍','🍎','🍊','🥝','🍑','🍋'];
+  var items, parts, score, lives, raf = null, running = false, spawnT = null, frame = 0, reported = false;
+  var trail = [], strokeHits = 0, flash = 0;
+
+  function reset(){
+    items = []; parts = []; score = 0; lives = 3; frame = 0; trail = []; strokeHits = 0; flash = 0; reported = false;
+    setScore('score', 0); setScore('lives', '❤❤❤');
+    draw();
+  }
+  function spawn(){
+    var bomb = Math.random() < 0.16;
+    items.push({
+      x: 40 + Math.random()*(W-80), y: H + 30,
+      vx: (Math.random()-0.5)*1.6, vy: -(10.5 + Math.random()*3.5),
+      r: 24, rot: 0, vr: (Math.random()-0.5)*0.15,
+      em: bomb ? '💣' : FRUITS[(Math.random()*FRUITS.length)|0],
+      bomb: bomb, sliced: false, counted: false
+    });
+  }
+  function draw(){
+    var g = ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#241447'); g.addColorStop(1,'#12081f');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    if(flash > 0){ ctx.fillStyle = 'rgba(248,113,113,' + (flash*0.35) + ')'; ctx.fillRect(0,0,W,H); }
+    items.forEach(function(it){
+      ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot);
+      ctx.font = '40px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(it.em, 0, 0);
+      ctx.restore();
+    });
+    parts.forEach(function(p){
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.globalAlpha = Math.max(0, p.life);
+      ctx.font = '24px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(p.em, 0, 0);
+      ctx.restore();
+    });
+    ctx.globalAlpha = 1;
+    if(trail.length > 1){
+      ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(trail[0].x, trail[0].y);
+      for(var i=1;i<trail.length;i++) ctx.lineTo(trail[i].x, trail[i].y);
+      ctx.stroke();
+    }
+  }
+  function loseLife(why){
+    lives--;
+    setScore('lives', lives > 0 ? '❤'.repeat(lives) : '—');
+    flash = 1;
+    if(lives <= 0){
+      running = false;
+      if(spawnT) clearInterval(spawnT);
+      draw();
+      stage.querySelector('#frMsg').innerHTML = '<span style="color:#f87171">Game Over! Score: '+score+'</span>';
+      if(!reported){ reported = true; reportScore('fruit', score, Math.floor(score/4)); }
+    } else {
+      stage.querySelector('#frMsg').textContent = why + ' Lives bachi: ' + lives;
+    }
+  }
+  function loop(){
+    if(!running) return;
+    frame++;
+    if(flash > 0) flash -= 0.06;
+    items.forEach(function(it){
+      it.x += it.vx; it.y += it.vy; it.vy += 0.28; it.rot += it.vr;
+      if(!it.counted && it.vy > 0 && it.y > H + 40){
+        it.counted = true;
+        if(!it.bomb && !it.sliced && running) loseLife('Fruit miss ho gaya!');
+      }
+    });
+    items = items.filter(function(it){ return it.y < H + 60; });
+    parts.forEach(function(p){ p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.rot += p.vr; p.life -= 0.03; });
+    parts = parts.filter(function(p){ return p.life > 0; });
+    trail = trail.filter(function(t){ return frame - t.f < 7; });
+    draw();
+    if(running) raf = requestAnimationFrame(loop);
+  }
+  function sliceCheck(x1, y1, x2, y2){
+    items.forEach(function(it){
+      if(it.sliced) return;
+      var dx = x2-x1, dy = y2-y1, len2 = dx*dx + dy*dy;
+      var t = len2 ? ((it.x-x1)*dx + (it.y-y1)*dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      var px = x1 + t*dx, py = y1 + t*dy;
+      var d = Math.hypot(it.x-px, it.y-py);
+      if(d < it.r + 6){
+        it.sliced = true;
+        if(it.bomb){
+          loseLife('Bomb phat gaya! 💥');
+        } else {
+          strokeHits++;
+          var gain = 10;
+          if(strokeHits >= 3) gain += 5;
+          score += gain;
+          setScore('score', score); if(score > bests.fruit) setScore('best', score);
+          for(var k=0;k<2;k++) parts.push({ x: it.x + (k?14:-14), y: it.y, vx: it.vx + (k?1.6:-1.6), vy: it.vy*0.4 - 1, rot: it.rot, vr: (k?0.2:-0.2), em: it.em, life: 1 });
+          if(strokeHits === 3) stage.querySelector('#frMsg').textContent = 'Combo! 🔥 Ek swipe me 3 fruits!';
+        }
+        it.y = H + 100; it.counted = true;
+      }
+    });
+  }
+  function pos(e){
+    var rect = cv.getBoundingClientRect();
+    return { x: (e.clientX - rect.left) * (W / rect.width), y: (e.clientY - rect.top) * (H / rect.height) };
+  }
+  var last = null, down = false;
+  cv.addEventListener('pointerdown', function(e){ e.preventDefault(); down = true; strokeHits = 0; last = pos(e); trail.push({ x:last.x, y:last.y, f:frame }); });
+  cv.addEventListener('pointermove', function(e){
+    if(!down || !running) return;
+    var p = pos(e);
+    if(last) sliceCheck(last.x, last.y, p.x, p.y);
+    last = p;
+    trail.push({ x:p.x, y:p.y, f:frame });
+  });
+  function endStroke(){
+    down = false; last = null;
+    if(strokeHits >= 3 && running) showToast('🔥 Combo x' + strokeHits + '!');
+    strokeHits = 0;
+  }
+  cv.addEventListener('pointerup', endStroke);
+  cv.addEventListener('pointercancel', endStroke);
+  cv.addEventListener('pointerleave', endStroke);
+  function start(){
+    if(raf) cancelAnimationFrame(raf);
+    if(spawnT) clearInterval(spawnT);
+    reset(); running = true;
+    stage.querySelector('#frMsg').textContent = 'Swipe karke kaato! 🍉';
+    stage.querySelector('#frStart').textContent = '↻ Restart';
+    spawnT = setInterval(function(){ if(running){ spawn(); if(Math.random() < 0.35) spawn(); } }, 800);
+    raf = requestAnimationFrame(loop);
+  }
+  stage.querySelector('#frStart').addEventListener('click', start);
+  reset();
+  return function(){ running = false; if(raf) cancelAnimationFrame(raf); if(spawnT) clearInterval(spawnT); };
+}
+
+/* ================= 8. TURBO RUNNER ================= */
+function gameRunner(stage){
+  stage.innerHTML =
+    '<p class="howto">Runner apne aap bhaagta hai! <b>Tap / Space = Jump</b> (cactus 🌵 aur pathar 🪨 ke upar se), <b>neeche swipe / Duck button = jhuko</b> (eagle 🦅 ke neeche se). Jitna door, utna zyada score!</p>' +
+    '<canvas id="rnCv" width="336" height="260" style="background:#aee3f5"></canvas>' +
+    '<div class="banner" id="rnMsg">Start dabao!</div>' +
+    '<div class="btnrow"><button class="btn" id="rnStart">▶ Start</button><button class="btn ghost" id="rnJump">⬆ Jump</button><button class="btn ghost" id="rnDuck">⬇ Duck</button></div>';
+  setScores([['Distance','0m','dist'],['Best',bests.runner + 'm','best']]);
+  var cv = stage.querySelector('#rnCv'), ctx = cv.getContext('2d');
+  var W = 336, H = 260, GY = 216;
+  var py, pvy, ducking, obs, dist, speed, raf = null, running = false, frame = 0, reported = false, nextSpawn = 60;
+
+  function reset(){
+    py = GY; pvy = 0; ducking = false; obs = []; dist = 0; speed = 4; frame = 0; nextSpawn = 70; reported = false;
+    setScore('dist', '0m');
+    draw();
+  }
+  function draw(){
+    var sky = ctx.createLinearGradient(0,0,0,H); sky.addColorStop(0,'#aee3f5'); sky.addColorStop(1,'#e8f9ff');
+    ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    [[60,36],[210,24],[290,52]].forEach(function(c){ ctx.beginPath(); ctx.arc(c[0],c[1],11,0,7); ctx.arc(c[0]+13,c[1]+2,8,0,7); ctx.fill(); });
+    ctx.fillStyle = '#8a6d3b'; ctx.fillRect(0, GY+14, W, H-GY-14);
+    ctx.fillStyle = '#5da24a'; ctx.fillRect(0, GY+14, W, 7);
+    ctx.strokeStyle = 'rgba(90,60,20,.5)'; ctx.lineWidth = 2; ctx.setLineDash([14,18]); ctx.lineDashOffset = -dist*2;
+    ctx.beginPath(); ctx.moveTo(0, GY+30); ctx.lineTo(W, GY+30); ctx.stroke(); ctx.setLineDash([]);
+    obs.forEach(function(o){
+      ctx.font = (o.type === 'eagle' ? '26px' : '28px') + ' serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText(o.em, o.x, o.y);
+    });
+    ctx.font = '32px serif'; ctx.textAlign = 'center';
+    ctx.fillText(ducking ? '🧎' : '🏃', 52, py + 12);
+  }
+  function spawnObs(){
+    var r = Math.random();
+    if(r < 0.42) obs.push({ type:'cactus', em:'🌵', x:W+30, y:GY+12, w:20, top:GY-16, bot:GY+14 });
+    else if(r < 0.72) obs.push({ type:'rock', em:'🪨', x:W+30, y:GY+12, w:22, top:GY-14, bot:GY+14 });
+    else obs.push({ type:'eagle', em:'🦅', x:W+30, y:GY-24, w:26, top:GY-52, bot:GY-20 });
+    nextSpawn = frame + 65 + Math.random()*55 - Math.min(25, speed*2);
+  }
+  function jump(){ if(running && py >= GY - 1){ pvy = -12.2; ducking = false; } }
+  function loop(){
+    if(!running) return;
+    frame++;
+    speed = 4 + dist/260;
+    dist += speed/14;
+    setScore('dist', Math.floor(dist) + 'm');
+    if(py < GY || pvy < 0){ pvy += 0.62; py += pvy; if(py > GY){ py = GY; pvy = 0; } }
+    if(frame >= nextSpawn) spawnObs();
+    var ph = ducking ? 20 : 34, pTop = py + 12 - ph, pBot = py + 12;
+    var hit = false;
+    obs.forEach(function(o){
+      o.x -= speed;
+      if(52 + 13 > o.x - o.w/2 && 52 - 13 < o.x + o.w/2 && pBot > o.top && pTop < o.bot) hit = true;
+    });
+    obs = obs.filter(function(o){ return o.x > -40; });
+    draw();
+    if(hit){
+      running = false;
+      var d = Math.floor(dist);
+      stage.querySelector('#rnMsg').innerHTML = '<span style="color:#f87171">Takkar! 🏃💥 Distance: '+d+'m</span>';
+      if(!reported){ reported = true; if(d > bests.runner) setScore('best', d + 'm'); reportScore('runner', d, Math.floor(d/15)); }
+      return;
+    }
+    raf = requestAnimationFrame(loop);
+  }
+  var duckTimer = null;
+  function duck(){
+    if(!running) return;
+    ducking = true;
+    if(duckTimer) clearTimeout(duckTimer);
+    duckTimer = setTimeout(function(){ ducking = false; }, 480);
+  }
+  cv.addEventListener('pointerdown', function(e){ e.preventDefault(); jump(); });
+  var tsy = 0;
+  cv.addEventListener('touchstart', function(e){ tsy = e.touches[0].clientY; }, {passive:true});
+  cv.addEventListener('touchend', function(e){
+    if(e.changedTouches[0].clientY - tsy > 34) duck();
+  }, {passive:true});
+  stage.querySelector('#rnJump').addEventListener('click', jump);
+  stage.querySelector('#rnDuck').addEventListener('click', duck);
+  function keyH(e){ if(e.key === ' ' || e.key === 'ArrowUp') jump(); if(e.key === 'ArrowDown') duck(); }
+  document.addEventListener('keydown', keyH);
+  function start(){
+    if(raf) cancelAnimationFrame(raf);
+    reset(); running = true;
+    stage.querySelector('#rnMsg').textContent = 'Bhaago! 🏃💨';
+    stage.querySelector('#rnStart').textContent = '↻ Restart';
+    raf = requestAnimationFrame(loop);
+  }
+  stage.querySelector('#rnStart').addEventListener('click', start);
+  reset();
+  return function(){ running = false; if(raf) cancelAnimationFrame(raf); if(duckTimer) clearTimeout(duckTimer); document.removeEventListener('keydown', keyH); };
+}
+
+/* ================= 9. FISHING MASTER ================= */
+function gameFishing(stage){
+  stage.innerHTML =
+    '<p class="howto">60 second hain! <b>🎣 Cast</b> dabao (ya canvas tap karo) — hook paani me jayega. Ungli/mouse ghumakar hook ko machhli tak le jao; hook chhute hi machhli phas jayegi aur upar aayegi. 🐟 10 · 🐠 25 · 🐡 40 · ✨ Golden 100 · 🦈 Shark 150 · 🥾 Boot sirf 2!</p>' +
+    '<canvas id="fsCv" width="336" height="420" style="background:#7ec8e3"></canvas>' +
+    '<div class="banner" id="fsMsg">Cast karke pehli machhli pakdo!</div>' +
+    '<div class="btnrow"><button class="btn" id="fsCast">🎣 Cast / Reel</button><button class="btn ghost" id="fsStart">↻ Naya Round</button></div>';
+  setScores([['Score','0','score'],['Fish','0','fish'],['Time','60s','time'],['Best',bests.fishing,'best']]);
+  var cv = stage.querySelector('#fsCv'), ctx = cv.getContext('2d');
+  var W = 336, H = 420, SURF = 84;
+  var FISH_TYPES = [
+    { em:'🐟', val:10, w:42 }, { em:'🐠', val:25, w:26 }, { em:'🐡', val:40, w:15 },
+    { em:'✨🐟', val:100, w:5 }, { em:'🦈', val:150, w:4 }, { em:'🥾', val:2, w:8 }
+  ];
+  var fishes, hook, phase, score, caught, timeLeft, raf = null, timer = null, running = false, frame = 0, reported = false, targetX = W/2;
+
+  function newFish(anyY){
+    var tot = 0; FISH_TYPES.forEach(function(f){ tot += f.w; });
+    var r = Math.random()*tot, ft = FISH_TYPES[0];
+    for(var i=0;i<FISH_TYPES.length;i++){ r -= FISH_TYPES[i].w; if(r <= 0){ ft = FISH_TYPES[i]; break; } }
+    var dir = Math.random() < 0.5 ? 1 : -1;
+    return {
+      em: ft.em, val: ft.val,
+      x: dir > 0 ? -30 : W + 30,
+      y: SURF + 40 + Math.random()*(H - SURF - 80),
+      vx: dir * (0.5 + Math.random()*0.9) * (ft.val >= 100 ? 1.5 : 1),
+      flip: dir < 0, caught: false
+    };
+  }
+  function reset(){
+    fishes = []; for(var i=0;i<7;i++){ var f = newFish(true); f.x = Math.random()*W; fishes.push(f); }
+    hook = { x: W/2, y: SURF - 26 };
+    phase = 'idle'; score = 0; caught = 0; timeLeft = 60; frame = 0; reported = false; targetX = W/2;
+    setScore('score', 0); setScore('fish', 0); setScore('time', '60s');
+    draw();
+  }
+  function draw(){
+    var sky = ctx.createLinearGradient(0,0,0,SURF); sky.addColorStop(0,'#8fd4ef'); sky.addColorStop(1,'#cdeffd');
+    ctx.fillStyle = sky; ctx.fillRect(0,0,W,SURF);
+    var wg = ctx.createLinearGradient(0,SURF,0,H); wg.addColorStop(0,'#2f9fd8'); wg.addColorStop(1,'#0b4d78');
+    ctx.fillStyle = wg; ctx.fillRect(0,SURF,W,H-SURF);
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for(var x=0;x<=W;x+=8) ctx.lineTo(x, SURF + Math.sin((x+frame*2)/22)*3);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.16)';
+    [[40,300],[150,360],[250,320],[300,180],[90,200]].forEach(function(b){ ctx.beginPath(); ctx.arc(b[0], b[1], 4 + (b[0]%3), 0, 7); ctx.fill(); });
+    fishes.forEach(function(f){
+      ctx.save(); ctx.translate(f.x, f.y); if(f.flip) ctx.scale(-1,1);
+      ctx.font = '26px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(f.em, 0, 0);
+      ctx.restore();
+    });
+    var boatX = hook.x;
+    ctx.font = '30px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('🚤', boatX, SURF - 16);
+    ctx.strokeStyle = 'rgba(20,20,20,.75)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(boatX + 8, SURF - 22); ctx.lineTo(hook.x, hook.y); ctx.stroke();
+    ctx.font = '18px serif';
+    ctx.fillText('🪝', hook.x, hook.y + 8);
+    var cf = fishes.filter(function(f){ return f.caught; })[0];
+    if(cf) ctx.fillText(cf.em, hook.x, hook.y + 24);
+  }
+  function loop(){
+    if(!running) return;
+    frame++;
+    if(frame % 150 === 0 && fishes.length < 9) fishes.push(newFish(false));
+    fishes.forEach(function(f){
+      if(f.caught) return;
+      f.x += f.vx;
+    });
+    fishes = fishes.filter(function(f){ return f.caught || (f.x > -45 && f.x < W + 45); });
+    if(phase === 'down'){
+      hook.y += 3.4;
+      hook.x += (targetX - hook.x) * 0.09;
+      var hitF = null;
+      fishes.forEach(function(f){ if(!f.caught && Math.abs(f.x - hook.x) < 24 && Math.abs(f.y - (hook.y + 10)) < 22) hitF = f; });
+      if(hitF){ hitF.caught = true; phase = 'up'; }
+      else if(hook.y > H - 26) phase = 'up';
+    } else if(phase === 'up'){
+      hook.y -= 4.4;
+      hook.x += (targetX - hook.x) * 0.05;
+      var cf = fishes.filter(function(f){ return f.caught; })[0];
+      if(cf){ cf.x = hook.x; cf.y = hook.y + 24; }
+      if(hook.y <= SURF - 26){
+        hook.y = SURF - 26; phase = 'idle';
+        if(cf){
+          score += cf.val; caught++;
+          fishes = fishes.filter(function(f){ return f !== cf; });
+          fishes.push(newFish(false));
+          setScore('score', score); setScore('fish', caught);
+          if(score > bests.fishing) setScore('best', score);
+          stage.querySelector('#fsMsg').textContent = cf.em + ' pakdi! +' + cf.val + ' points 🎉';
+        }
+      }
+    } else {
+      hook.x += (targetX - hook.x) * 0.12;
+    }
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+  function cast(){
+    if(!running) return;
+    if(phase === 'idle') phase = 'down';
+    else if(phase === 'down') phase = 'up';
+  }
+  function posX(e){
+    var rect = cv.getBoundingClientRect();
+    return (e.clientX - rect.left) * (W / rect.width);
+  }
+  cv.addEventListener('pointerdown', function(e){ targetX = posX(e); cast(); });
+  cv.addEventListener('pointermove', function(e){ targetX = posX(e); });
+  stage.querySelector('#fsCast').addEventListener('click', cast);
+  function startRound(){
+    if(timer) clearInterval(timer);
+    if(raf) cancelAnimationFrame(raf);
+    reset(); running = true;
+    stage.querySelector('#fsMsg').textContent = 'Machhliyan intezaar kar rahi hain! 🐠';
+    raf = requestAnimationFrame(loop);
+    timer = setInterval(function(){
+      timeLeft--; setScore('time', timeLeft + 's');
+      if(timeLeft <= 0){
+        clearInterval(timer); running = false;
+        stage.querySelector('#fsMsg').innerHTML = '<span style="color:#4ade80">Time khatm! Score: '+score+' ('+caught+' machhli)</span>';
+        if(!reported){ reported = true; reportScore('fishing', score, Math.floor(score/4)); }
+      }
+    }, 1000);
+  }
+  stage.querySelector('#fsStart').addEventListener('click', startRound);
+  startRound();
+  return function(){ running = false; if(raf) cancelAnimationFrame(raf); if(timer) clearInterval(timer); };
+}
+
+/* ================= 10. CHESS vs COMPUTER (20 Levels) ================= */
+var CH_VAL = { p:100, n:320, b:330, r:500, q:900, k:0 };
+var CH_GLYPH = { k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟' };
+var CH_PST = {
+  p: [[0,0,0,0,0,0,0,0],[50,50,50,50,50,50,50,50],[10,10,20,30,30,20,10,10],[5,5,10,25,25,10,5,5],[0,0,0,20,20,0,0,0],[5,-5,-10,0,0,-10,-5,5],[5,10,10,-20,-20,10,10,5],[0,0,0,0,0,0,0,0]],
+  n: [[-50,-40,-30,-30,-30,-30,-40,-50],[-40,-20,0,0,0,0,-20,-40],[-30,0,10,15,15,10,0,-30],[-30,5,15,20,20,15,5,-30],[-30,0,15,20,20,15,0,-30],[-30,5,10,15,15,10,5,-30],[-40,-20,0,5,5,0,-20,-40],[-50,-40,-30,-30,-30,-40,-30,-50]],
+  b: [[-20,-10,-10,-10,-10,-10,-10,-20],[-10,0,0,0,0,0,0,-10],[-10,0,5,10,10,5,0,-10],[-10,5,5,10,10,5,5,-10],[-10,0,10,10,10,10,0,-10],[-10,10,10,10,10,10,10,-10],[-10,5,0,0,0,0,5,-10],[-20,-10,-10,-10,-10,-10,-10,-20]],
+  r: [[0,0,0,0,0,0,0,0],[5,10,10,10,10,10,10,5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[0,0,0,5,5,0,0,0]],
+  q: [[-20,-10,-10,-5,-5,-10,-10,-20],[-10,0,0,0,0,0,0,-10],[-10,0,5,5,5,5,0,-10],[-5,0,5,5,5,5,0,-5],[0,0,5,5,5,5,0,-5],[-10,5,5,5,5,5,0,-10],[-10,0,5,0,0,0,0,-10],[-20,-10,-10,-5,-5,-10,-10,-20]],
+  k: [[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-20,-30,-30,-40,-40,-30,-30,-20],[-10,-20,-20,-20,-20,-20,-20,-10],[20,20,0,0,0,0,20,20],[20,30,10,0,0,10,30,20]]
+};
+function chInitBoard(){
+  var back = ['r','n','b','q','k','b','n','r'];
+  var b = [];
+  for(var r=0;r<8;r++){ b.push([null,null,null,null,null,null,null,null]); }
+  for(var c=0;c<8;c++){
+    b[0][c] = { t:back[c], c:'b' }; b[1][c] = { t:'p', c:'b' };
+    b[6][c] = { t:'p', c:'w' }; b[7][c] = { t:back[c], c:'w' };
+  }
+  return b;
+}
+function chClone(b){ return b.map(function(row){ return row.map(function(p){ return p ? { t:p.t, c:p.c } : null; }); }); }
+function chIn(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
+function chAttacked(b, r, c, by){
+  var res = false;
+  var pr = by === 'w' ? r+1 : r-1;
+  [-1,1].forEach(function(dc){ if(chIn(pr, c+dc)){ var p = b[pr][c+dc]; if(p && p.c===by && p.t==='p') res = true; } });
+  [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(function(d){
+    var rr=r+d[0], cc=c+d[1]; if(chIn(rr,cc)){ var p=b[rr][cc]; if(p && p.c===by && p.t==='n') res = true; }
+  });
+  for(var dr=-1;dr<=1;dr++) for(var dc2=-1;dc2<=1;dc2++){
+    if(!dr && !dc2) continue;
+    var rr2=r+dr, cc2=c+dc2; if(chIn(rr2,cc2)){ var p2=b[rr2][cc2]; if(p2 && p2.c===by && p2.t==='k') res = true; }
+  }
+  [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(function(d){
+    var rr=r+d[0], cc=c+d[1];
+    while(chIn(rr,cc)){ var p=b[rr][cc]; if(p){ if(p.c===by && (p.t==='b'||p.t==='q')) res = true; break; } rr+=d[0]; cc+=d[1]; }
+  });
+  [[-1,0],[1,0],[0,-1],[0,1]].forEach(function(d){
+    var rr=r+d[0], cc=c+d[1];
+    while(chIn(rr,cc)){ var p=b[rr][cc]; if(p){ if(p.c===by && (p.t==='r'||p.t==='q')) res = true; break; } rr+=d[0]; cc+=d[1]; }
+  });
+  return res;
+}
+function chKingPos(b, color){
+  for(var r=0;r<8;r++) for(var c=0;c<8;c++){ var p=b[r][c]; if(p && p.t==='k' && p.c===color) return [r,c]; }
+  return null;
+}
+function chInCheck(b, color){
+  var kp = chKingPos(b, color); if(!kp) return false;
+  return chAttacked(b, kp[0], kp[1], color === 'w' ? 'b' : 'w');
+}
+function chPseudo(b, r, c, state){
+  var p = b[r][c]; if(!p) return [];
+  var moves = [], enemy = p.c === 'w' ? 'b' : 'w';
+  function add(rr, cc, flags){ moves.push(Object.assign({ fr:r, fc:c, tr:rr, tc:cc }, flags || {})); }
+  if(p.t === 'p'){
+    var dir = p.c === 'w' ? -1 : 1, startRow = p.c === 'w' ? 6 : 1, lastRow = p.c === 'w' ? 0 : 7;
+    if(chIn(r+dir, c) && !b[r+dir][c]){
+      add(r+dir, c, (r+dir) === lastRow ? { promo:true } : {});
+      if(r === startRow && !b[r+2*dir][c]) add(r+2*dir, c, { dbl:true });
+    }
+    [-1,1].forEach(function(dc){
+      var rr = r+dir, cc = c+dc;
+      if(!chIn(rr,cc)) return;
+      if(b[rr][cc] && b[rr][cc].c === enemy) add(rr, cc, rr === lastRow ? { promo:true } : {});
+      else if(state.ep && state.ep[0] === rr && state.ep[1] === cc) add(rr, cc, { ep:true });
+    });
+  } else if(p.t === 'n' || p.t === 'k'){
+    var dirs = p.t === 'n' ? [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]] : [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+    dirs.forEach(function(d){
+      var rr = r+d[0], cc = c+d[1];
+      if(chIn(rr,cc) && (!b[rr][cc] || b[rr][cc].c === enemy)) add(rr, cc, {});
+    });
+    if(p.t === 'k'){
+      var rights = state.castle[p.c];
+      var home = p.c === 'w' ? 7 : 0;
+      if(r === home && c === 4){
+        if(rights.K && !b[home][5] && !b[home][6] && b[home][7] && b[home][7].t === 'r' && b[home][7].c === p.c
+           && !chAttacked(b, home, 4, enemy) && !chAttacked(b, home, 5, enemy) && !chAttacked(b, home, 6, enemy)) add(home, 6, { castle:'K' });
+        if(rights.Q && !b[home][3] && !b[home][2] && !b[home][1] && b[home][0] && b[home][0].t === 'r' && b[home][0].c === p.c
+           && !chAttacked(b, home, 4, enemy) && !chAttacked(b, home, 3, enemy) && !chAttacked(b, home, 2, enemy)) add(home, 2, { castle:'Q' });
+      }
+    }
+  } else {
+    var dset = p.t === 'b' ? [[-1,-1],[-1,1],[1,-1],[1,1]] : p.t === 'r' ? [[-1,0],[1,0],[0,-1],[0,1]] : [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+    dset.forEach(function(d){
+      var rr = r+d[0], cc = c+d[1];
+      while(chIn(rr,cc)){
+        if(!b[rr][cc]) add(rr, cc, {});
+        else { if(b[rr][cc].c === enemy) add(rr, cc, {}); break; }
+        rr += d[0]; cc += d[1];
+      }
+    });
+  }
+  return moves;
+}
+function chApply(b, m, state){
+  var nb = chClone(b), p = nb[m.fr][m.fc];
+  var ns = { castle: { w:Object.assign({}, state.castle.w), b:Object.assign({}, state.castle.b) }, ep: m.dbl ? [(m.fr+m.tr)/2, m.fc] : null };
+  if(m.ep) nb[m.fr][m.tc] = null;
+  nb[m.tr][m.tc] = m.promo ? { t:'q', c:p.c } : p;
+  nb[m.fr][m.fc] = null;
+  if(m.castle === 'K'){ nb[m.fr][5] = nb[m.fr][7]; nb[m.fr][7] = null; }
+  if(m.castle === 'Q'){ nb[m.fr][3] = nb[m.fr][0]; nb[m.fr][0] = null; }
+  if(p.t === 'k'){ ns.castle[p.c].K = false; ns.castle[p.c].Q = false; }
+  if(p.t === 'r'){
+    if(m.fr === 7 && m.fc === 0) ns.castle.w.Q = false;
+    if(m.fr === 7 && m.fc === 7) ns.castle.w.K = false;
+    if(m.fr === 0 && m.fc === 0) ns.castle.b.Q = false;
+    if(m.fr === 0 && m.fc === 7) ns.castle.b.K = false;
+  }
+  var cap = b[m.tr][m.tc];
+  if(cap && cap.t === 'r'){
+    if(m.tr === 7 && m.tc === 0) ns.castle.w.Q = false;
+    if(m.tr === 7 && m.tc === 7) ns.castle.w.K = false;
+    if(m.tr === 0 && m.tc === 0) ns.castle.b.Q = false;
+    if(m.tr === 0 && m.tc === 7) ns.castle.b.K = false;
+  }
+  return { b: nb, state: ns };
+}
+function chLegal(b, color, state){
+  var all = [];
+  for(var r=0;r<8;r++) for(var c=0;c<8;c++){
+    var p = b[r][c];
+    if(p && p.c === color){
+      chPseudo(b, r, c, state).forEach(function(m){
+        var res = chApply(b, m, state);
+        if(!chInCheck(res.b, color)) all.push(m);
+      });
+    }
+  }
+  return all;
+}
+function chEval(b){
+  var s = 0;
+  for(var r=0;r<8;r++) for(var c=0;c<8;c++){
+    var p = b[r][c]; if(!p) continue;
+    var pst = CH_PST[p.t][p.c === 'w' ? r : 7 - r][c];
+    var v = CH_VAL[p.t] + pst;
+    s += p.c === 'w' ? v : -v;
+  }
+  return s;
+}
+function chSearch(b, color, state, depth, alpha, beta){
+  var moves = chLegal(b, color, state);
+  if(moves.length === 0){
+    if(chInCheck(b, color)) return color === 'w' ? -100000 - depth : 100000 + depth;
+    return 0;
+  }
+  if(depth === 0) return chEval(b);
+  moves.sort(function(a, b2){
+    var ca = b[a.tr][a.tc] ? CH_VAL[b[a.tr][a.tc].t] : 0;
+    var cb = b[b2.tr][b2.tc] ? CH_VAL[b[b2.tr][b2.tc].t] : 0;
+    return cb - ca;
+  });
+  var i, res;
+  if(color === 'w'){
+    var max = -Infinity;
+    for(i=0;i<moves.length;i++){
+      res = chApply(b, moves[i], state);
+      var v = chSearch(res.b, 'b', res.state, depth-1, alpha, beta);
+      if(v > max) max = v;
+      if(max > alpha) alpha = max;
+      if(beta <= alpha) break;
+    }
+    return max;
+  }
+  var min = Infinity;
+  for(i=0;i<moves.length;i++){
+    res = chApply(b, moves[i], state);
+    var v2 = chSearch(res.b, 'w', res.state, depth-1, alpha, beta);
+    if(v2 < min) min = v2;
+    if(min < beta) beta = min;
+    if(beta <= alpha) break;
+  }
+  return min;
+}
+function chBestMove(b, state, level){
+  var moves = chLegal(b, 'b', state);
+  if(!moves.length) return null;
+  var depth = level <= 4 ? 1 : (level <= 12 ? 2 : 3);
+  var blunder = Math.max(0, 0.5 - level * 0.025);
+  var noise = Math.max(0, 70 - level * 4);
+  var scored = moves.map(function(m){
+    var res = chApply(b, m, state);
+    var v = chSearch(res.b, 'w', res.state, depth - 1, -Infinity, Infinity);
+    return { m: m, v: v + (Math.random()*2 - 1) * noise };
+  });
+  scored.sort(function(a, b2){ return a.v - b2.v; });
+  if(Math.random() < blunder && scored.length > 3){
+    var pool = scored.slice(Math.min(3, scored.length - 1));
+    return pool[(Math.random()*pool.length)|0].m;
+  }
+  return scored[0].m;
+}
+
+function gameChess(stage){
+  stage.innerHTML =
+    '<div class="chwrap" id="chWrap">' +
+    '<p class="howto">Tum <b>White</b> ho. Apna piece tap karo, phir chamki hui jagah tap karke move karo. <b>20 Levels</b> hain — level jeeto, agla unlock karo! Level jitna upar, computer utna smart aur coin reward utna bada (jeet = 30 + Level × 10 coins).</p>' +
+    '<div class="lvlgrid" id="chLevels"></div>' +
+    '<div class="chboard" id="chBoard"></div>' +
+    '<div class="chstatus" id="chStatus"></div>' +
+    '<div class="setrow" id="chSets"></div>' +
+    '<div class="btnrow"><button class="btn" id="chNew">↻ Is Level Par Naya Game</button></div>' +
+    '</div>';
+  setScores([['Level', chessLevel, 'level'],['Unlocked', chessUnlocked + ' / 20', 'unl'],['Best Level', bests.chess ? bests.chess : '—', 'best']]);
+  var wrap = stage.querySelector('#chWrap');
+  var boardEl = stage.querySelector('#chBoard');
+  var statusEl = stage.querySelector('#chStatus');
+  var levelsEl = stage.querySelector('#chLevels');
+  var setsEl = stage.querySelector('#chSets');
+  var board, state, turn, sel, selMoves, lastMove, over, thinking, reportedWin;
+  var SETS = [
+    { val:'classic', name:'♟ Classic', item:'chess_classic' },
+    { val:'neon', name:'♞ Neon Night', item:'chess_neon' },
+    { val:'frost', name:'♜ Frost Ice', item:'chess_frost' },
+    { val:'gold', name:'♛ Royal Gold', item:'chess_gold' }
+  ];
+
+  function renderLevels(){
+    levelsEl.innerHTML = '';
+    for(var i=1;i<=20;i++){
+      var b = document.createElement('button');
+      b.className = 'lvlbtn' + (i === chessLevel ? ' cur' : '') + (i <= bests.chess ? ' done' : '');
+      b.textContent = i > chessUnlocked ? '🔒' : i;
+      b.disabled = i > chessUnlocked;
+      b.setAttribute('aria-label', 'Level ' + i);
+      (function(lv){ b.addEventListener('click', function(){ chessLevel = lv; setScore('level', lv); newGame(); }); })(i);
+      levelsEl.appendChild(b);
+    }
+  }
+  function renderSets(){
+    setsEl.innerHTML = '';
+    SETS.forEach(function(s){
+      var b = document.createElement('button');
+      b.className = 'setbtn' + (selected.chessSet === s.val ? ' on' : '');
+      b.textContent = s.name + (owned[s.item] ? '' : ' 🔒');
+      b.disabled = !owned[s.item];
+      b.title = owned[s.item] ? s.name : 'Shop se coins me unlock karo';
+      b.addEventListener('click', function(){ selected.chessSet = s.val; applySet(); renderSets(); });
+      setsEl.appendChild(b);
+    });
+  }
+  function applySet(){
+    wrap.className = 'chwrap' + (selected.chessSet !== 'classic' ? ' set-' + selected.chessSet : '');
+  }
+  function render(){
+    boardEl.innerHTML = '';
+    for(var r=0;r<8;r++) for(var c=0;c<8;c++){
+      var d = document.createElement('div');
+      d.className = 'chsq ' + (((r+c) % 2 === 0) ? 'l' : 'd');
+      if(lastMove && ((lastMove.fr===r && lastMove.fc===c) || (lastMove.tr===r && lastMove.tc===c))) d.classList.add('last');
+      if(sel && sel[0]===r && sel[1]===c) d.classList.add('sel');
+      if(selMoves) selMoves.forEach(function(m){ if(m.tr===r && m.tc===c) d.classList.add(board[r][c] ? 'cap' : 'hint'); });
+      var p = board[r][c];
+      if(p){
+        var sp = document.createElement('span');
+        sp.className = p.c === 'w' ? 'chpw' : 'chpb';
+        sp.textContent = CH_GLYPH[p.t];
+        d.appendChild(sp);
+      }
+      (function(rr, cc){ d.addEventListener('click', function(){ onTap(rr, cc); }); })(r, c);
+      boardEl.appendChild(d);
+    }
+  }
+  function status(html){ statusEl.innerHTML = html; }
+  function newGame(){
+    board = chInitBoard();
+    state = { castle: { w:{K:true,Q:true}, b:{K:true,Q:true} }, ep: null };
+    turn = 'w'; sel = null; selMoves = null; lastMove = null; over = false; thinking = false; reportedWin = false;
+    renderLevels(); renderSets(); applySet(); render();
+    status('<b>Level ' + chessLevel + '</b> — Tumhari chaal (White). Computer ki taaqat: ' + (chessLevel <= 4 ? 'Aasan 😊' : chessLevel <= 9 ? 'Medium 😐' : chessLevel <= 14 ? 'Mushkil 😤' : chessLevel <= 18 ? 'Bahut Mushkil 🔥' : 'GRANDMASTER 💀') + '<br>Jeetne par reward: <b>🪙 ' + (30 + chessLevel*10) + ' coins</b>');
+    setScore('level', chessLevel);
+    setScore('unl', chessUnlocked + ' / 20');
+  }
+  function endCheck(mover){
+    var next = mover === 'w' ? 'b' : 'w';
+    var moves = chLegal(board, next, state);
+    if(moves.length === 0){
+      over = true;
+      if(chInCheck(board, next)){
+        if(mover === 'w'){
+          var reward = 30 + chessLevel * 10;
+          status('🏆 <b>Checkmate! Tum Level ' + chessLevel + ' jeet gaye!</b><br>Reward: 🪙 ' + reward + ' coins' + (chessLevel < 20 ? ' · Level ' + (chessLevel+1) + ' unlock ho gaya! 🎉' : ' · Tumne saare 20 levels clear kar liye — CHAMPION! 👑'));
+          if(chessLevel >= chessUnlocked && chessLevel < 20) chessUnlocked = chessLevel + 1;
+          if(!reportedWin){ reportedWin = true; reportScore('chess', chessLevel, reward); }
+          setScore('unl', chessUnlocked + ' / 20'); setScore('best', bests.chess);
+          renderLevels();
+        } else {
+          status('💀 <b>Checkmate! Computer Level ' + chessLevel + ' jeet gaya.</b><br>Phir koshish karo — har haar ek seekh hai!');
+          reportScore('chess', 0, 3);
+        }
+      } else {
+        status('🤝 <b>Stalemate — Draw!</b> Koi legal move nahi bacha.<br>Reward: 🪙 ' + (10 + chessLevel) + ' coins');
+        reportScore('chess', 0, 10 + chessLevel);
+      }
+      return true;
+    }
+    if(chInCheck(board, next)) status(next === 'w' ? '⚠️ <b>Check!</b> Tumhara raja khatre me hai!' : '⚔️ Computer check me hai — dabaav banao rakho!');
+    return false;
+  }
+  function aiMove(){
+    if(over) return;
+    thinking = true;
+    status('🤔 Computer soch raha hai… (Level ' + chessLevel + ')');
+    setTimeout(function(){
+      var m = chBestMove(board, state, chessLevel);
+      thinking = false;
+      if(!m){ endCheck('w'); render(); return; }
+      var res = chApply(board, m, state);
+      board = res.b; state = res.state; lastMove = m;
+      turn = 'w';
+      render();
+      if(!endCheck('b')) status('Tumhari chaal (White).');
+      render();
+    }, 60);
+  }
+  function onTap(r, c){
+    if(over || thinking || turn !== 'w') return;
+    if(selMoves){
+      var mv = null;
+      selMoves.forEach(function(m){ if(m.tr===r && m.tc===c) mv = m; });
+      if(mv){
+        var res = chApply(board, mv, state);
+        board = res.b; state = res.state; lastMove = mv;
+        sel = null; selMoves = null; turn = 'b';
+        render();
+        if(!endCheck('w')) aiMove();
+        return;
+      }
+    }
+    var p = board[r][c];
+    if(p && p.c === 'w'){
+      sel = [r, c];
+      selMoves = chLegal(board, 'w', state).filter(function(m){ return m.fr===r && m.fc===c; });
+    } else { sel = null; selMoves = null; }
+    render();
+  }
+  stage.querySelector('#chNew').addEventListener('click', newGame);
+  newGame();
+  return function(){};
+}
+
+var GAMES = { snake: gameSnake, flappy: gameFlappy, memory: gameMemory, whack: gameWhack, g2048: game2048, brick: gameBrick, fruit: gameFruit, runner: gameRunner, chess: gameChess, fishing: gameFishing };
+</script>
+</body>
+</html>
